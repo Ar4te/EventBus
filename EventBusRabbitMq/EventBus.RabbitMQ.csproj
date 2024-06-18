@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<Title>ALibrary.EventBus.RabbitMQ</Title>
+		<Version>$(VersionPrefix)</Version>
+		<PackageId>ALibrary.$(AssemblyName)</PackageId>
+		<Authors>ALibrary.$(AssemblyName)</Authors>
+		<Owners>ALibrary.$(AssemblyName)</Owners>
+		<Company>ALibrary.Ar4te.$(Authors)</Company>
+		<Product>ALibrary.$(AssemblyName)</Product>
+		<Description>EventBus.RabbitMQ</Description>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)' == 'Release'">
+		<VersionSuffix>1</VersionSuffix>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	</PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ALibrary.EventBus" Version="1.0.0-1" />
+    <PackageReference Include="Aspire.RabbitMQ.Client" Version="8.0.1" />
+    <PackageReference Include="RabbitMQ.Client.Core.DependencyInjection" Version="5.0.0" />
+  </ItemGroup>
+
+</Project>
