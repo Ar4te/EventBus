@@ -1,3 +1,3 @@
 # EventBus
 
-Separation from [the program](https://github.com/dotnet/aspire)
+Separation from [aspire](https://github.com/dotnet/aspire)
