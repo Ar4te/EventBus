@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Apis;
 using WebApplication1.Extensions;
+using EventBus.EventLog.Npgsql.Utilities;
+using EventBus.EventLog.Npgsql.Services;
 
 namespace WebApplication1;
 
@@ -55,10 +57,20 @@ public class Program
         .WithName("GetWeatherForecast")
         .WithOpenApi();
 
-        app.MapGet("/testEvent", async (HttpContext httpContext, [FromServices] ITestServices testServices) =>
+        app.MapGet("/testEvent", async (HttpContext httpContext, [FromServices] ITestServices testServices, [FromServices] IIntegrationEventLogService integrationEventLogService, [FromServices] TestDbContext testDbContext) =>
         {
-            var @event = new Tes32tEvent("TestInfo");
-            await testServices.EventBus.PublishAsync(@event);
+            var @event = new Tes32tIntegrationEvent("TestInfo");
+            //var transactionId = Guid.NewGuid();
+            //var transaction = await testDbContext.BeginTransactionAsync();
+            //await integrationEventLogService.SaveEventAsync(@event, transaction);
+            //await integrationEventLogService.MarkEventAsInProgressAsync(@event.Id);
+            //await testServices.EventBus.PublishAsync(@event);
+            //await testDbContext.CommitTransactionAsync(transaction);
+            await ResilientTransacation.New(testDbContext).ExecuteAsync(async () =>
+            {
+                await integrationEventLogService.SaveEventAsync(@event, testDbContext.Database.CurrentTransaction!);
+                await testServices.EventBus.PublishAsync(@event);
+            });
             await Task.CompletedTask;
         })
         .WithName("TestEvent")

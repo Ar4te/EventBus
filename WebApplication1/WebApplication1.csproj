@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\EventBus.EventLog.Npgsql\EventBus.EventLog.Npgsql.csproj" />
     <ProjectReference Include="..\EventBus.ServiceDefaults\EventBus.ServiceDefaults.csproj" />
   </ItemGroup>
 

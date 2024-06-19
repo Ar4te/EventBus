@@ -1,6 +1,7 @@
 ﻿
 using System.Text.Json;
 using EventBus.Abstractions;
+using EventBus.EventLog.Npgsql.Services;
 using EventBus.Events;
 using Infrastructure;
 
@@ -18,28 +19,28 @@ public static class TestApi
 
     private static async Task TestGet([AsParameters] TestServices testServices)
     {
-        var @event = new Tes32tEvent("TestInfo");
+        var @event = new Tes32tIntegrationEvent("TestInfo");
         await testServices.EventBus.PublishAsync(@event);
         await Task.CompletedTask;
     }
 }
 
-public record Tes32tEvent : IntegrationEvent
+public record Tes32tIntegrationEvent : IntegrationEvent
 {
     public string Info { get; set; }
 
-    public Tes32tEvent() : base()
+    public Tes32tIntegrationEvent() : base()
     {
 
     }
 
-    public Tes32tEvent(string info) : base()
+    public Tes32tIntegrationEvent(string info) : base()
     {
         Info = info;
     }
 }
 
-public class TestEventHandler : IIntegrationEventHandler<Tes32tEvent>
+public class TestEventHandler : IIntegrationEventHandler<Tes32tIntegrationEvent>
 {
     private readonly ILogger<TestEventHandler> _logger;
 
@@ -48,28 +49,30 @@ public class TestEventHandler : IIntegrationEventHandler<Tes32tEvent>
         _logger = logger;
     }
 
-    public Task Handle(Tes32tEvent @event)
+    public Task Handle(Tes32tIntegrationEvent @event)
     {
         _logger.LogInformation("TestEventHandler Handling integration event: {IntegrationEventId} - ({@IntegrationEvent})", @event.Id, @event);
         return Task.CompletedTask;
     }
 }
 
-public class TestEventHandler2 : IIntegrationEventHandler<Tes32tEvent>
+public class TestEventHandler2 : IIntegrationEventHandler<Tes32tIntegrationEvent>
 {
     private readonly ILogger<TestEventHandler2> _logger;
+    private readonly IIntegrationEventLogService _integrationEventLogService;
 
-    public TestEventHandler2(ILogger<TestEventHandler2> logger)
+    public TestEventHandler2(ILogger<TestEventHandler2> logger, IIntegrationEventLogService integrationEventLogService)
     {
         _logger = logger;
+        _integrationEventLogService = integrationEventLogService;
     }
 
-    public Task Handle(Tes32tEvent @event)
+    public async Task Handle(Tes32tIntegrationEvent @event)
     {
         //Test3.Test();
         Test3.Test2();
+        //await _integrationEventLogService.MarkEventAsConsumedAsync(@event.Id);
         _logger.LogInformation("TestEventHandler2 Handling integration event: {IntegrationEventId} - ({@IntegrationEvent})", @event.Id, @event);
-        return Task.CompletedTask;
     }
 }
 
