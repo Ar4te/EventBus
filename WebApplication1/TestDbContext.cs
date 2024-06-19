@@ -6,11 +6,6 @@ using WebApplication1.Application.Queries;
 
 namespace WebApplication1;
 
-/// <remarks>
-/// Add migrations using the following command inside the 'Ordering.Infrastructure' project directory:
-///
-/// dotnet ef migrations add --startup-project Ordering.API --context OrderingContext [migration-name]
-/// </remarks>
 public class TestDbContext : DbContext, IUnitOfWork
 {
     private IDbContextTransaction _currentTransaction;

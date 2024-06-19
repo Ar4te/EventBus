@@ -60,16 +60,12 @@ public class Program
         app.MapGet("/testEvent", async (HttpContext httpContext, [FromServices] ITestServices testServices, [FromServices] IIntegrationEventLogService integrationEventLogService, [FromServices] TestDbContext testDbContext) =>
         {
             var @event = new Tes32tIntegrationEvent("TestInfo");
-            //var transactionId = Guid.NewGuid();
-            //var transaction = await testDbContext.BeginTransactionAsync();
-            //await integrationEventLogService.SaveEventAsync(@event, transaction);
-            //await integrationEventLogService.MarkEventAsInProgressAsync(@event.Id);
-            //await testServices.EventBus.PublishAsync(@event);
-            //await testDbContext.CommitTransactionAsync(transaction);
             await ResilientTransacation.New(testDbContext).ExecuteAsync(async () =>
             {
                 await integrationEventLogService.SaveEventAsync(@event, testDbContext.Database.CurrentTransaction!);
+                await integrationEventLogService.MarkEventAsInProgressAsync(@event.Id);
                 await testServices.EventBus.PublishAsync(@event);
+                await integrationEventLogService.MarkEventAsPublishedAsync(@event.Id);
             });
             await Task.CompletedTask;
         })
