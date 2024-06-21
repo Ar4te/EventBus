@@ -30,11 +30,11 @@ public static class IntegrationLogExtensions
     {
         var (CheckTableExists, CreateTable) = dbTypeEnum switch
         {
-            DbTypeEnum.MySQL => (LogTableSQLStr.MySQL.CheckTableExists, LogTableSQLStr.MySQL.CreateTable),
+            DbTypeEnum.MySQL => (LogTableSQLStr.MySQL.CheckTableExists("Test"), LogTableSQLStr.MySQL.CreateTable),
             DbTypeEnum.Oracle => (LogTableSQLStr.Oracle.CheckTableExists, LogTableSQLStr.Oracle.CreateTable),
             DbTypeEnum.SQLServer => (LogTableSQLStr.SQLServer.CheckTableExists, LogTableSQLStr.SQLServer.CreateTable),
             DbTypeEnum.SQLite => (LogTableSQLStr.SQLite.CheckTableExists, LogTableSQLStr.SQLite.CreateTable),
-            DbTypeEnum.PostgreSQL => (LogTableSQLStr.PostgreSQL.CheckTableExists, LogTableSQLStr.PostgreSQL.CreateTable),
+            DbTypeEnum.PostgreSQL => (LogTableSQLStr.PostgreSQL.CheckTableExists("public"), LogTableSQLStr.PostgreSQL.CreateTable),
             _ => throw new InvalidOperationException(nameof(dbTypeEnum))
         };
         services.CreateIntegrationEventLogTableOnNpgsql<TDbContext>(CheckTableExists, CreateTable);
@@ -47,14 +47,18 @@ public static class IntegrationLogExtensions
         using var scope = serviceProvider.CreateScope();
         using var tDbContext = scope.ServiceProvider.GetRequiredService<TDbContext>();
         tDbContext.Database.EnsureCreated();
-
-        var tableExists = tDbContext.Database.ExecuteSqlRaw(checkTableExistsQuery);
+        using var connection = tDbContext.Database.GetDbConnection();
+        connection.Open();
+        using var checkCommand = connection.CreateCommand();
+        checkCommand.CommandText = checkTableExistsQuery;
+        var tableExists = (bool)checkCommand.ExecuteScalar()!;
 
         // 如果表不存在，创建表
-        if (tableExists <= 0)
+        if (!tableExists)
         {
-            tDbContext.Database.ExecuteSqlRaw(createTableQuery);
+            using var createCommand = connection.CreateCommand();
+            createCommand.CommandText = createTableQuery;
+            createCommand.ExecuteScalar();
         }
     }
-
 }

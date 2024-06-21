@@ -15,7 +15,9 @@ public static class Extensions
         //builder.Services.AddSingleton<IBasketRespository, RedisBasketRepository>();
         builder.Services.AddDbContext<TestDbContext>(opt =>
         {
-            opt.UseNpgsql(builder.Configuration.GetSection("PgSql").Value);
+            //opt.UseNpgsql(builder.Configuration.GetSection("PgSql").Value);
+            var connStr = builder.Configuration.GetSection("MySql").Value;
+            opt.UseMySql(connStr, ServerVersion.AutoDetect(connStr));
         })
         .AddIntegrationEventLog<TestDbContext>(DbTypeEnum.MySQL);
 
