@@ -1,4 +1,4 @@
-﻿namespace EventBus.EventLog.Npgsql.Models;
+﻿namespace EventBus.EventLog.EFCore.Models;
 
 public enum EventStateEnum
 {

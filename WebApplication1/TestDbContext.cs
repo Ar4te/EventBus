@@ -1,5 +1,5 @@
 ﻿using System.Data;
-using EventBus.EventLog.Npgsql.Extensions;
+using EventBus.EventLog.EFCore.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using WebApplication1.Application.Queries;

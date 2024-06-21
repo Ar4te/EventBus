@@ -1,5 +1,5 @@
 ﻿using System.Text.Json.Serialization;
-using EventBus.EventLog.Npgsql.Extensions;
+using EventBus.EventLog.EFCore.Extensions;
 using EventBus.Extensions;
 using EventBus.RabbitMQ;
 using Microsoft.EntityFrameworkCore;
@@ -17,7 +17,7 @@ public static class Extensions
         {
             opt.UseNpgsql(builder.Configuration.GetSection("PgSql").Value);
         })
-        .AddIntegrationEventLog<TestDbContext>();
+        .AddIntegrationEventLog<TestDbContext>(DbTypeEnum.MySQL);
 
         builder.AddRabbitMqEventBus()
             .AddSubscription<Tes32tIntegrationEvent, TestEventHandler>()

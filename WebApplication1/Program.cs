@@ -2,8 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Apis;
 using WebApplication1.Extensions;
-using EventBus.EventLog.Npgsql.Utilities;
-using EventBus.EventLog.Npgsql.Services;
+using EventBus.EventLog.EFCore.Utilities;
+using EventBus.EventLog.EFCore.Services;
 
 namespace WebApplication1;
 

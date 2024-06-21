@@ -1,8 +1,8 @@
-﻿using EventBus.EventLog.Npgsql.Models;
+﻿using EventBus.EventLog.EFCore.Models;
 using EventBus.Events;
 using Microsoft.EntityFrameworkCore.Storage;
 
-namespace EventBus.EventLog.Npgsql.Services;
+namespace EventBus.EventLog.EFCore.Services;
 
 public interface IIntegrationEventLogService
 {

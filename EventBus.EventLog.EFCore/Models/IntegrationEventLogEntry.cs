@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
 using EventBus.Events;
 
-namespace EventBus.EventLog.Npgsql.Models;
+namespace EventBus.EventLog.EFCore.Models;
 
 public class IntegrationEventLogEntry
 {

@@ -1,7 +1,5 @@
-﻿
-using System.Text.Json;
-using EventBus.Abstractions;
-using EventBus.EventLog.Npgsql.Services;
+﻿using EventBus.Abstractions;
+using EventBus.EventLog.EFCore.Services;
 using EventBus.Events;
 using Infrastructure;
 

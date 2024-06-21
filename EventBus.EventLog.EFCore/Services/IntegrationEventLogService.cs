@@ -1,10 +1,10 @@
 ﻿using System.Reflection;
-using EventBus.EventLog.Npgsql.Models;
+using EventBus.EventLog.EFCore.Models;
 using EventBus.Events;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
-namespace EventBus.EventLog.Npgsql.Services;
+namespace EventBus.EventLog.EFCore.Services;
 
 public class IntegrationEventLogService<TDbContext> : IIntegrationEventLogService, IDisposable
     where TDbContext : DbContext

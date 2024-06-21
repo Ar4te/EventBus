@@ -4,14 +4,14 @@
 		<TargetFramework>net8.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<Title>ALibrary.EventBus.EventLog.Npgsql</Title>
+		<Title>ALibrary.EventBus.EventLog.EFCore</Title>
 		<Version>$(VersionPrefix)</Version>
 		<PackageId>ALibrary.$(AssemblyName)</PackageId>
 		<Authors>ALibrary.$(AssemblyName)</Authors>
 		<Owners>ALibrary.$(AssemblyName)</Owners>
 		<Company>ALibrary.Ar4te.$(Authors)</Company>
 		<Product>ALibrary.$(AssemblyName)</Product>
-		<Description>EventBus.EventLog.Npgsql</Description>
+		<Description>EventBus.EventLog.EFCore</Description>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)' == 'Release'">

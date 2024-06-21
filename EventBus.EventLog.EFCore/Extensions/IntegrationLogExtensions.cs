@@ -1,0 +1,60 @@
+﻿using EventBus.EventLog.EFCore.Models;
+using EventBus.EventLog.EFCore.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace EventBus.EventLog.EFCore.Extensions;
+
+public static class IntegrationLogExtensions
+{
+    public static IServiceCollection AddIntegrationEventLog<TDbContext>(this IServiceCollection services, DbTypeEnum dbTypeEnum = DbTypeEnum.PostgreSQL) where TDbContext : DbContext
+    {
+        services.CreateIntegrationEventLogTable<TDbContext>(dbTypeEnum);
+        services.AddTransient<IIntegrationEventLogService, IntegrationEventLogService<TDbContext>>();
+        return services;
+    }
+
+    public static ModelBuilder UseIntegrationEventLogs(this ModelBuilder builder)
+    {
+        builder.Entity<IntegrationEventLogEntry>(builder =>
+        {
+            builder.ToTable("IntegrationEventLog");
+            builder.HasKey(e => e.EventId);
+        });
+
+        return builder;
+    }
+
+    public static void CreateIntegrationEventLogTable<TDbContext>(this IServiceCollection services, DbTypeEnum dbTypeEnum)
+        where TDbContext : DbContext
+    {
+        var (CheckTableExists, CreateTable) = dbTypeEnum switch
+        {
+            DbTypeEnum.MySQL => (LogTableSQLStr.MySQL.CheckTableExists, LogTableSQLStr.MySQL.CreateTable),
+            DbTypeEnum.Oracle => (LogTableSQLStr.Oracle.CheckTableExists, LogTableSQLStr.Oracle.CreateTable),
+            DbTypeEnum.SQLServer => (LogTableSQLStr.SQLServer.CheckTableExists, LogTableSQLStr.SQLServer.CreateTable),
+            DbTypeEnum.SQLite => (LogTableSQLStr.SQLite.CheckTableExists, LogTableSQLStr.SQLite.CreateTable),
+            DbTypeEnum.PostgreSQL => (LogTableSQLStr.PostgreSQL.CheckTableExists, LogTableSQLStr.PostgreSQL.CreateTable),
+            _ => throw new InvalidOperationException(nameof(dbTypeEnum))
+        };
+        services.CreateIntegrationEventLogTableOnNpgsql<TDbContext>(CheckTableExists, CreateTable);
+    }
+
+    private static void CreateIntegrationEventLogTableOnNpgsql<TDbContext>(this IServiceCollection services, string checkTableExistsQuery, string createTableQuery)
+        where TDbContext : DbContext
+    {
+        using var serviceProvider = services.BuildServiceProvider();
+        using var scope = serviceProvider.CreateScope();
+        using var tDbContext = scope.ServiceProvider.GetRequiredService<TDbContext>();
+        tDbContext.Database.EnsureCreated();
+
+        var tableExists = tDbContext.Database.ExecuteSqlRaw(checkTableExistsQuery);
+
+        // 如果表不存在，创建表
+        if (tableExists <= 0)
+        {
+            tDbContext.Database.ExecuteSqlRaw(createTableQuery);
+        }
+    }
+
+}

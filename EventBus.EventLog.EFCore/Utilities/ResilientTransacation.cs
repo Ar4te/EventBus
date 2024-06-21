@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace EventBus.EventLog.Npgsql.Utilities;
+namespace EventBus.EventLog.EFCore.Utilities;
 
 public class ResilientTransacation
 {
