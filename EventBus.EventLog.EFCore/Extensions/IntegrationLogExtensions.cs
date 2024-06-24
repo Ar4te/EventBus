@@ -37,7 +37,20 @@ public static class IntegrationLogExtensions
             DbTypeEnum.PostgreSQL => (LogTableSQLStr.PostgreSQL.CheckTableExists("public"), LogTableSQLStr.PostgreSQL.CreateTable),
             _ => throw new InvalidOperationException(nameof(dbTypeEnum))
         };
-        services.CreateIntegrationEventLogTableOnNpgsql<TDbContext>(CheckTableExists, CreateTable);
+
+        switch (dbTypeEnum)
+        {
+            case DbTypeEnum.MySQL:
+                services.CreateIntegrationEventLogTableOnMysql<TDbContext>(CheckTableExists, CreateTable);
+                break;
+            case DbTypeEnum.Oracle://todo
+            case DbTypeEnum.SQLServer://todo
+            case DbTypeEnum.SQLite://todo
+            case DbTypeEnum.PostgreSQL:
+            default:
+                services.CreateIntegrationEventLogTableOnNpgsql<TDbContext>(CheckTableExists, CreateTable);
+                break;
+        }
     }
 
     private static void CreateIntegrationEventLogTableOnNpgsql<TDbContext>(this IServiceCollection services, string checkTableExistsQuery, string createTableQuery)
@@ -51,7 +64,30 @@ public static class IntegrationLogExtensions
         connection.Open();
         using var checkCommand = connection.CreateCommand();
         checkCommand.CommandText = checkTableExistsQuery;
+        var _t = checkCommand.ExecuteScalar()!;
         var tableExists = (bool)checkCommand.ExecuteScalar()!;
+
+        // 如果表不存在，创建表
+        if (!tableExists)
+        {
+            using var createCommand = connection.CreateCommand();
+            createCommand.CommandText = createTableQuery;
+            createCommand.ExecuteScalar();
+        }
+    }
+
+    private static void CreateIntegrationEventLogTableOnMysql<TDbContext>(this IServiceCollection services, string checkTableExistsQuery, string createTableQuery)
+        where TDbContext : DbContext
+    {
+        using var serviceProvider = services.BuildServiceProvider();
+        using var scope = serviceProvider.CreateScope();
+        using var tDbContext = scope.ServiceProvider.GetRequiredService<TDbContext>();
+        tDbContext.Database.EnsureCreated();
+        using var connection = tDbContext.Database.GetDbConnection();
+        connection.Open();
+        using var checkCommand = connection.CreateCommand();
+        checkCommand.CommandText = checkTableExistsQuery;
+        var tableExists = (long)checkCommand.ExecuteScalar()! >= 1;
 
         // 如果表不存在，创建表
         if (!tableExists)

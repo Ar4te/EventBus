@@ -14,10 +14,13 @@ public static class LogTableSQLStr
     public static class MySQL
     {
         public static string CheckTableExists(string tableSchema) => @$"
-            SELECT COUNT(*)
-            FROM infomation_schema.tables
-            WHERE table_schema = '{tableSchema}'
-            AND table_name = 'IntegrationEventLog';
+               SELECT
+	             1 
+               FROM
+	             information_schema.TABLES 
+               WHERE
+	             table_schema = '{tableSchema}' 
+	             AND table_name = 'IntegrationEventLog'
         ";
         public static string CreateTable = @"
             CREATE TABLE IntegrationEventLog (
