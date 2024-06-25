@@ -1,8 +1,10 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Reflection;
+using System.Text.Json.Serialization;
 using EventBus.EventLog.EFCore.Extensions;
 using EventBus.Extensions;
 using EventBus.RabbitMQ;
 using Microsoft.EntityFrameworkCore;
+using MyTimedTask;
 using WebApplication1.Apis;
 
 namespace WebApplication1.Extensions;
@@ -29,6 +31,15 @@ public static class Extensions
             .AddSubscription<Tes32tIntegrationEvent, TestEventHandler>()
             .AddSubscription<Tes32tIntegrationEvent, TestEventHandler2>()
             .ConfigureJsonOptions(opt => opt.TypeInfoResolverChain.Add(IntegrationEventContext.Default));
+        builder.Services.AddSingleton<TimeTaskScheduler>();
+        var types = Assembly.GetExecutingAssembly().GetTypes().Where(t => typeof(ITimedTask).IsAssignableFrom(t)).ToList();
+        if (types.Any())
+        {
+            foreach (var type in types)
+            {
+                builder.Services.AddTransient(type);
+            }
+        }
     }
 }
 

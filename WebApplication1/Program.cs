@@ -4,6 +4,8 @@ using WebApplication1.Apis;
 using WebApplication1.Extensions;
 using EventBus.EventLog.EFCore.Utilities;
 using EventBus.EventLog.EFCore.Services;
+using MyTimedTask;
+using WebApplication1.TimedTasks;
 
 namespace WebApplication1;
 
@@ -21,6 +23,7 @@ public class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
         builder.Services.AddTransient<ITestServices, TestServices>();
+        builder.Services.AddTransient<TestCustomTimedTaskService>();
         //builder.adddefaultopenapi
         var app = builder.Build();
 
@@ -70,6 +73,18 @@ public class Program
             await Task.CompletedTask;
         })
         .WithName("TestEvent")
+        .WithOpenApi();
+
+        app.MapGet("/testTimedTask", (HttpContext httpContext, TimeTaskScheduler scheduler) =>
+        {
+            var taskDataMap = new TimedTaskDataMap();
+            taskDataMap.Put("JJJJ", "xxxxx");
+            scheduler.AddTask<CustomTimedTask>("Task1", TimeSpan.FromSeconds(1), taskDataMap).Wait();
+
+            scheduler.StartAll();
+
+        })
+        .WithName("TestTimedTask")
         .WithOpenApi();
 
         app.Run();

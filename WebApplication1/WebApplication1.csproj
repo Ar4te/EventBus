@@ -21,6 +21,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\EventBus.EventLog.EFCore\EventBus.EventLog.EFCore.csproj" />
 		<ProjectReference Include="..\EventBus.ServiceDefaults\EventBus.ServiceDefaults.csproj" />
+		<ProjectReference Include="..\MyTimedTask\MyTimedTask.csproj" />
 	</ItemGroup>
 
 </Project>
