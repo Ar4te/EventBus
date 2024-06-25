@@ -16,10 +16,14 @@ public static class Extensions
         builder.Services.AddDbContext<TestDbContext>(opt =>
         {
             //opt.UseNpgsql(builder.Configuration.GetSection("PgSql").Value);
-            var connStr = builder.Configuration.GetSection("MySql").Value;
-            opt.UseMySql(connStr, ServerVersion.AutoDetect(connStr));
+            //var connStr = builder.Configuration.GetSection("MySql").Value;
+            //opt.UseMySql(connStr, ServerVersion.AutoDetect(connStr));
+            var connStr = builder.Configuration.GetSection("Sqlite").Value;
+            opt.UseSqlite(connStr);
         })
-        .AddIntegrationEventLog<TestDbContext>(DbTypeEnum.MySQL);
+        .AddIntegrationEventLog<TestDbContext>(DbTypeEnum.SQLite);
+        //.AddIntegrationEventLog<TestDbContext>(DbTypeEnum.MySQL);
+        //.AddIntegrationEventLog<TestDbContext>(DbTypeEnum.PostgreSQL);
 
         builder.AddRabbitMqEventBus()
             .AddSubscription<Tes32tIntegrationEvent, TestEventHandler>()

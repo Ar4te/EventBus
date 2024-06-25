@@ -30,25 +30,27 @@ public static class IntegrationLogExtensions
     {
         var (CheckTableExists, CreateTable) = dbTypeEnum switch
         {
-            DbTypeEnum.MySQL => (LogTableSQLStr.MySQL.CheckTableExists("Test"), LogTableSQLStr.MySQL.CreateTable),
+            DbTypeEnum.MySQL => (LogTableSQLStr.MySQL.CheckTableExists("Test"), LogTableSQLStr.MySQL.CreateTable("Test")),
             DbTypeEnum.Oracle => (LogTableSQLStr.Oracle.CheckTableExists, LogTableSQLStr.Oracle.CreateTable),
             DbTypeEnum.SQLServer => (LogTableSQLStr.SQLServer.CheckTableExists, LogTableSQLStr.SQLServer.CreateTable),
             DbTypeEnum.SQLite => (LogTableSQLStr.SQLite.CheckTableExists, LogTableSQLStr.SQLite.CreateTable),
-            DbTypeEnum.PostgreSQL => (LogTableSQLStr.PostgreSQL.CheckTableExists("public"), LogTableSQLStr.PostgreSQL.CreateTable),
+            DbTypeEnum.PostgreSQL => (LogTableSQLStr.PostgreSQL.CheckTableExists("public"), LogTableSQLStr.PostgreSQL.CreateTable("Test2")),
             _ => throw new InvalidOperationException(nameof(dbTypeEnum))
         };
 
         switch (dbTypeEnum)
         {
             case DbTypeEnum.MySQL:
-                services.CreateIntegrationEventLogTableOnMysql<TDbContext>(CheckTableExists, CreateTable);
+                services.CreateIntegrationEventLogTableOnNpgsql<TDbContext>(CreateTable);
                 break;
             case DbTypeEnum.Oracle://todo
             case DbTypeEnum.SQLServer://todo
-            case DbTypeEnum.SQLite://todo
+            case DbTypeEnum.SQLite:
+                services.CreateIntegrationEventLogTableOnNpgsql<TDbContext>(CreateTable);
+                break;
             case DbTypeEnum.PostgreSQL:
             default:
-                services.CreateIntegrationEventLogTableOnNpgsql<TDbContext>(CheckTableExists, CreateTable);
+                services.CreateIntegrationEventLogTableOnNpgsql<TDbContext>(CreateTable);
                 break;
         }
     }
@@ -76,7 +78,44 @@ public static class IntegrationLogExtensions
         }
     }
 
+    private static void CreateIntegrationEventLogTableOnNpgsql<TDbContext>(this IServiceCollection services, string createTableQuery)
+       where TDbContext : DbContext
+    {
+        using var serviceProvider = services.BuildServiceProvider();
+        using var scope = serviceProvider.CreateScope();
+        using var tDbContext = scope.ServiceProvider.GetRequiredService<TDbContext>();
+        tDbContext.Database.EnsureCreated();
+        using var connection = tDbContext.Database.GetDbConnection();
+        connection.Open();
+        using var createCommand = connection.CreateCommand();
+        createCommand.CommandText = createTableQuery;
+        createCommand.ExecuteScalar();
+    }
+
+
     private static void CreateIntegrationEventLogTableOnMysql<TDbContext>(this IServiceCollection services, string checkTableExistsQuery, string createTableQuery)
+        where TDbContext : DbContext
+    {
+        using var serviceProvider = services.BuildServiceProvider();
+        using var scope = serviceProvider.CreateScope();
+        using var tDbContext = scope.ServiceProvider.GetRequiredService<TDbContext>();
+        tDbContext.Database.EnsureCreated();
+        using var connection = tDbContext.Database.GetDbConnection();
+        connection.Open();
+        using var checkCommand = connection.CreateCommand();
+        checkCommand.CommandText = checkTableExistsQuery;
+        var tableExists = (long)checkCommand.ExecuteScalar()! >= 1;
+
+        // 如果表不存在，创建表
+        if (!tableExists)
+        {
+            using var createCommand = connection.CreateCommand();
+            createCommand.CommandText = createTableQuery;
+            createCommand.ExecuteScalar();
+        }
+    }
+
+    private static void CreateIntegrationEventLogTableOnSqlite<TDbContext>(this IServiceCollection services, string checkTableExistsQuery, string createTableQuery)
         where TDbContext : DbContext
     {
         using var serviceProvider = services.BuildServiceProvider();
