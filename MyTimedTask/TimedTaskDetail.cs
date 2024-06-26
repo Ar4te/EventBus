@@ -4,8 +4,10 @@ public class TimedTaskDetail
 {
     private readonly CancellationTokenSource _cts;
     private readonly Func<Task> _taskFunc;
-
-    private readonly Timer _timer;
+    #region Timer
+    //private readonly Timer _timer;
+    #endregion
+    private readonly PeriodicTimer _periodicTimer;
 
     public TimedTaskDetail(string name, TimeSpan interval, Func<Task> taskFunc, TimedTaskDataMap dataMap, bool startNow = false, int startAt = 0)
     {
@@ -17,7 +19,10 @@ public class TimedTaskDetail
         if (startAt < 0) throw new InvalidOperationException(nameof(startAt) + "must bigger than zero");
         StartAt = TimeSpan.FromSeconds(startAt);
         _cts = new CancellationTokenSource();
-        _timer = new Timer(async _ => await ExecuteAsync(), null, Timeout.Infinite, Timeout.Infinite);
+        #region Timer
+        //_timer = new Timer(async _ => await ExecuteAsync(), null, Timeout.Infinite, Timeout.Infinite);
+        #endregion
+        _periodicTimer = new PeriodicTimer(Interval);
     }
 
     public string Name { get; }
@@ -36,47 +41,54 @@ public class TimedTaskDetail
                 await Task.Delay(StartAt, _cts.Token);
             }
 
-            ////使用Timer替换while
-            //while (!_cts.IsCancellationRequested)
-            //{
-            //    try
-            //    {
-            //        await _taskFunc();
-            //    }
-            //    catch (Exception e)
-            //    {
-            //        Console.WriteLine(e);
-            //    }
+            #region while
+            while (await _periodicTimer.WaitForNextTickAsync(_cts.Token))
+            {
+                try
+                {
+                    await _taskFunc();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
 
-            //    await Task.Delay(Interval, _cts.Token);
-            //}
+                await Task.Delay(Interval, _cts.Token);
+            }
+            #endregion
 
-            _timer.Change(TimeSpan.Zero, Interval);
+            #region Timer
+            //_timer.Change(TimeSpan.Zero, Interval);
+            #endregion
+
         }, _cts.Token);
     }
 
     public void Stop()
     {
         _cts.Cancel();
-        _timer.Change(Timeout.Infinite, Timeout.Infinite);
+        //_timer.Change(Timeout.Infinite, Timeout.Infinite);
+        _periodicTimer.Dispose();
     }
 
-    private async Task ExecuteAsync()
-    {
-        try
-        {
-            await _taskFunc();
-        }
-        catch (Exception)
-        {
-            throw;
-        }
-        finally
-        {
-            if (!_cts.IsCancellationRequested)
-            {
-                _timer.Change(Interval, Timeout.InfiniteTimeSpan);
-            }
-        }
-    }
+    #region Timer
+    //private async Task ExecuteAsync()
+    //{
+    //    try
+    //    {
+    //        await _taskFunc();
+    //    }
+    //    catch (Exception)
+    //    {
+    //        throw;
+    //    }
+    //    finally
+    //    {
+    //        if (!_cts.IsCancellationRequested)
+    //        {
+    //            _timer.Change(Interval, Timeout.InfiniteTimeSpan);
+    //        }
+    //    }
+    //}
+    #endregion
 }

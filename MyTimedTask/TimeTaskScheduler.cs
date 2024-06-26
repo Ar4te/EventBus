@@ -16,6 +16,8 @@ public class TimeTaskScheduler
     {
         var _task = _serviceProvider.GetService(typeof(T)) as ITimedTask ?? throw new ArgumentNullException(typeof(T).Name);
 
+        dataMap.Put("Name", name);
+
         var task = new TimedTaskDetail(name, interval, () => _task.Execute(dataMap), dataMap, startNow, startAt);
 
         if (!_tasks.TryAdd(name, task))
