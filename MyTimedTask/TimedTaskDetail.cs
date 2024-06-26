@@ -53,7 +53,7 @@ public class TimedTaskDetail
                     Console.WriteLine(e);
                 }
 
-                await Task.Delay(Interval, _cts.Token);
+                //await Task.Delay(Interval, _cts.Token);
             }
             #endregion
 
