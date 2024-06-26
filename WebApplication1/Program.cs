@@ -75,11 +75,11 @@ public class Program
         .WithName("TestEvent")
         .WithOpenApi();
 
-        app.MapGet("/testTimedTask", (HttpContext httpContext, TimeTaskScheduler scheduler) =>
+        app.MapGet("/testTimedTask", async (HttpContext httpContext, TimeTaskScheduler scheduler) =>
         {
             var taskDataMap = new TimedTaskDataMap();
             taskDataMap.Put("JJJJ", "xxxxx");
-            scheduler.AddTask<CustomTimedTask>("Task1", TimeSpan.FromSeconds(1), taskDataMap).Wait();
+            scheduler.AddTask<CustomTimedTask>("Task1", TimeSpan.FromSeconds(1), taskDataMap);
 
             scheduler.StartAll();
 

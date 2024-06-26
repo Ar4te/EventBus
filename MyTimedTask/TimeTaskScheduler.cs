@@ -11,10 +11,10 @@ public class TimeTaskScheduler
     {
         _serviceProvider = serviceProvider;
     }
-    public async Task AddTask<T>(string name, TimeSpan interval, TimedTaskDataMap dataMap,
+    public void AddTask<T>(string name, TimeSpan interval, TimedTaskDataMap dataMap,
         bool startNow = false, int startAt = default) where T : ITimedTask
     {
-        var _task = _serviceProvider.GetService(typeof(T)) as ITimedTask;
+        var _task = _serviceProvider.GetService(typeof(T)) as ITimedTask ?? throw new ArgumentNullException(typeof(T).Name);
 
         var task = new TimedTaskDetail(name, interval, () => _task.Execute(dataMap), dataMap, startNow, startAt);
 
@@ -32,7 +32,11 @@ public class TimeTaskScheduler
         else if (task.StartAt > TimeSpan.Zero)
         {
             Console.WriteLine($"Task with name {task.Name} was ran after {task.StartAt.Seconds}s.");
-            await Task.Delay(task.StartAt).ContinueWith(_ => task.Start());
+            Task.Run(async () =>
+            {
+                await Task.Delay(task.StartAt);
+                task.Start();
+            });
         }
     }
 
