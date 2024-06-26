@@ -40,14 +40,11 @@ public static class IntegrationLogExtensions
 
         switch (dbTypeEnum)
         {
-            case DbTypeEnum.MySQL:
-                services.CreateIntegrationEventLogTableOnNpgsql<TDbContext>(CreateTable);
-                break;
             case DbTypeEnum.Oracle://todo
             case DbTypeEnum.SQLServer://todo
-            case DbTypeEnum.SQLite:
-                services.CreateIntegrationEventLogTableOnNpgsql<TDbContext>(CreateTable);
                 break;
+            case DbTypeEnum.MySQL:
+            case DbTypeEnum.SQLite:
             case DbTypeEnum.PostgreSQL:
             default:
                 services.CreateIntegrationEventLogTableOnNpgsql<TDbContext>(CreateTable);
