@@ -33,7 +33,7 @@ public static class Extensions
             .ConfigureJsonOptions(opt => opt.TypeInfoResolverChain.Add(IntegrationEventContext.Default));
         builder.Services.AddSingleton<TimeTaskScheduler>();
         var types = Assembly.GetExecutingAssembly().GetTypes().Where(t => typeof(ITimedTask).IsAssignableFrom(t)).ToList();
-        if (types.Any())
+        if (types.Count != 0)
         {
             foreach (var type in types)
             {
