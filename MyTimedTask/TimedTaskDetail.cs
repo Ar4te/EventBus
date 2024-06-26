@@ -34,7 +34,7 @@ public class TimedTaskDetail
 
     public void Start()
     {
-        Task.Factory.StartNew(async () =>
+        Task.Run(async () =>
         {
             if (StartAt > TimeSpan.Zero)
             {
