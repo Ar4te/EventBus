@@ -77,18 +77,10 @@ public class Program
 
         app.MapGet("/testTimedTask", (HttpContext httpContext, TimeTaskScheduler scheduler) =>
         {
-            for (int i = 0; i < 20000; i++)
+            for (int i = 0; i < 1000; i++)
             {
                 scheduler.AddTask<CustomTimedTask>($"Task1.{i}", TimeSpan.FromSeconds(1), new TimedTaskDataMap());
             }
-            //scheduler.AddTask<CustomTimedTask>("Task1.1", TimeSpan.FromSeconds(1), new TimedTaskDataMap());
-            //scheduler.AddTask<CustomTimedTask>("Task1.2", TimeSpan.FromSeconds(1), new TimedTaskDataMap());
-            //scheduler.AddTask<CustomTimedTask>("Task1.3", TimeSpan.FromSeconds(1), new TimedTaskDataMap());
-            //scheduler.AddTask<CustomTimedTask>("Task1.4", TimeSpan.FromSeconds(1), new TimedTaskDataMap());
-            //scheduler.AddTask<CustomTimedTask>("Task1.5", TimeSpan.FromSeconds(1), new TimedTaskDataMap());
-            //scheduler.AddTask<CustomTimedTask>("Task1.6", TimeSpan.FromSeconds(1), new TimedTaskDataMap());
-            //scheduler.AddTask<CustomTimedTask2>("Task2.0", TimeSpan.FromSeconds(1), new TimedTaskDataMap());
-
             scheduler.StartAll();
 
         })

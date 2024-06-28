@@ -1,21 +1,25 @@
 ﻿using System.Collections.Concurrent;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MyTimedTask;
 
 public class TimeTaskScheduler
 {
     private readonly ConcurrentDictionary<string, TimedTaskDetail> _tasks = new();
+    private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly IServiceProvider _serviceProvider;
-
-    public TimeTaskScheduler(IServiceProvider serviceProvider)
+    public TimeTaskScheduler(IServiceScopeFactory serviceScopeFactory)
     {
-        _serviceProvider = serviceProvider;
+        _serviceScopeFactory = serviceScopeFactory;
+        _serviceProvider = serviceScopeFactory.CreateScope().ServiceProvider;
     }
+
     public void AddTask<T>(string name, TimeSpan interval, TimedTaskDataMap dataMap,
         bool startNow = false, int startAt = default) where T : ITimedTask
     {
+        //using var scope = _serviceScopeFactory.CreateScope();
+        //var serviceProvider = scope.ServiceProvider;
         var _task = _serviceProvider.GetService(typeof(T)) as ITimedTask ?? throw new ArgumentNullException(typeof(T).Name);
-
         dataMap.Put("Name", name);
 
         var task = new TimedTaskDetail(name, interval, () => _task.Execute(dataMap), dataMap, startNow, startAt);
