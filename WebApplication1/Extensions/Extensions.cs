@@ -32,15 +32,7 @@ public static class Extensions
             .AddSubscription<Tes32tIntegrationEvent, TestEventHandler>()
             .AddSubscription<Tes32tIntegrationEvent, TestEventHandler2>()
             .ConfigureJsonOptions(opt => opt.TypeInfoResolverChain.Add(IntegrationEventContext.Default));
-        builder.Services.AddSingleton<TimeTaskScheduler>();
-        var types = Assembly.GetExecutingAssembly().GetTypes().Where(t => typeof(ITimedTask).IsAssignableFrom(t)).ToList();
-        if (types.Count != 0)
-        {
-            foreach (var type in types)
-            {
-                builder.Services.AddTransient(type);
-            }
-        }
+        builder.Services.AddTimedTask(Assembly.GetExecutingAssembly());
     }
 }
 
