@@ -13,7 +13,7 @@ public static class TimedTaskExtensions
         {
             foreach (var type in types)
             {
-                services.AddTransient(type);
+                services.AddTransient(typeof(ITimedTask), type);
             }
         }
         return services;
