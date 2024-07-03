@@ -22,7 +22,16 @@ public class TimeTaskScheduler
         var _task = _serviceProvider.GetService(typeof(T)) as ITimedTask ?? throw new ArgumentNullException(typeof(T).Name);
         dataMap.Put("Name", name);
 
-        var task = new TimedTaskDetail(name, interval, () => _task.Execute(dataMap), dataMap, startNow, startAt);
+        var task = TimedTaskDetail.Build()
+            .WithName(name)
+            .WithInterval(interval)
+            .For<T>(() => _task.Execute(dataMap))
+            .WithRepeats()
+            .UseTaskDataMap(dataMap)
+            .StartNow(startNow)
+            .StartAt(startAt);
+
+        //var task = new TimedTaskDetail(name, interval, , dataMap, startNow, startAt);
 
         if (!_tasks.TryAdd(name, task))
         {
@@ -42,6 +51,30 @@ public class TimeTaskScheduler
             {
                 await Task.Delay(task.StartAt);
                 task.Start();
+            });
+        }
+    }
+
+    public void AddTask<T>(TimedTaskDetail timedTaskDetail) where T : ITimedTask
+    {
+        if (!_tasks.TryAdd(timedTaskDetail.Name, timedTaskDetail))
+        {
+            throw new InvalidOperationException($"Task with name {timedTaskDetail.Name} already exists.");
+        }
+
+        Console.WriteLine($"Task with name {timedTaskDetail.Name} was added.");
+        if (timedTaskDetail.StartNow || timedTaskDetail.StartAt == TimeSpan.Zero)
+        {
+            timedTaskDetail.Start();
+            Console.WriteLine($"Task with name {timedTaskDetail.Name} was ran now.");
+        }
+        else if (timedTaskDetail.StartAt > TimeSpan.Zero)
+        {
+            Console.WriteLine($"Task with name {timedTaskDetail.Name} was ran after {timedTaskDetail.StartAt.Seconds}s.");
+            Task.Run(async () =>
+            {
+                await Task.Delay(timedTaskDetail.StartAt);
+                timedTaskDetail.Start();
             });
         }
     }

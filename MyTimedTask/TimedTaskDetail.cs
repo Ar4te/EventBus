@@ -1,21 +1,26 @@
 ﻿namespace MyTimedTask;
 
-public class TimedTaskDetail
+public partial class TimedTaskDetail
 {
     private readonly CancellationTokenSource _cts;
-    private readonly Func<Task> _taskFunc;
     #region Timer
     //private readonly Timer _timer;
     #endregion
     private readonly PeriodicTimer _periodicTimer;
 
-    public TimedTaskDetail(string name, TimeSpan interval, Func<Task> taskFunc, TimedTaskDataMap dataMap, bool startNow = false, int startAt = 0)
+    private TimedTaskDetail()
+    {
+
+    }
+
+    private TimedTaskDetail(string name, TimeSpan interval, Func<Task> taskFunc, TimedTaskDataMap dataMap, bool startNow = false, int startAt = 0, int repeats = -1)
     {
         Name = name;
         Interval = interval;
-        _taskFunc = taskFunc;
+        TaskFunc = taskFunc;
         TimedTaskDataMap = dataMap;
         StartNow = startNow;
+        Repeats = repeats;
         if (startAt < 0) throw new InvalidOperationException(nameof(startAt) + "must bigger than zero");
         StartAt = TimeSpan.FromSeconds(startAt);
         _cts = new CancellationTokenSource();
@@ -25,34 +30,37 @@ public class TimedTaskDetail
         _periodicTimer = new PeriodicTimer(Interval);
     }
 
-    public string Name { get; }
-    public TimeSpan Interval { get; }
-    public TimedTaskDataMap TimedTaskDataMap { get; }
-    public bool StartNow { get; }
-    public TimeSpan StartAt { get; }
-
+    public string Name { get; private set; }
+    public TimeSpan Interval { get; private set; }
+    public TimedTaskDataMap TimedTaskDataMap { get; private set; }
+    public bool StartNow { get; private set; }
+    public int Repeats { get; private set; }
+    public TimeSpan StartAt { get; private set; }
+    public Func<Task> TaskFunc { get; private set; }
 
     public void Start()
     {
         Task.Run(async () =>
         {
-            if (StartAt > TimeSpan.Zero)
-            {
-                await Task.Delay(StartAt, _cts.Token);
-            }
-
+            //if (StartAt > TimeSpan.Zero)
+            //{
+            //    await Task.Delay(StartAt, _cts.Token);
+            //}
+            int repeats = 0;
             #region while
             while (await _periodicTimer.WaitForNextTickAsync(_cts.Token))
             {
                 try
                 {
-                    await _taskFunc();
+                    await TaskFunc();
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine(e);
                 }
 
+                repeats++;
+                if (repeats == Repeats) break;
                 //await Task.Delay(Interval, _cts.Token);
             }
             #endregion
@@ -60,7 +68,7 @@ public class TimedTaskDetail
             #region Timer
             //_timer.Change(TimeSpan.Zero, Interval);
             #endregion
-
+            Stop();
         }, _cts.Token);
     }
 
