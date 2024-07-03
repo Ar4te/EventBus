@@ -88,6 +88,7 @@ public class Program
             .WithInterval(TimeSpan.FromSeconds(1))
             .WithRepeats(3)
             .For<CustomTimedTask2>(() => ta.Execute(dataMap))
+            .StartAt(10)
             .UseTaskDataMap(new TimedTaskDataMap());
             try
             {

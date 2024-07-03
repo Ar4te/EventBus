@@ -41,20 +41,34 @@ public class TimeTaskScheduler
         }
 
         Console.WriteLine($"Task with name {task.Name} was added.");
-        if (task.StartNow || task.StartAt == TimeSpan.Zero)
+        //if (task.StartNow || task.StartAt == TimeSpan.Zero)
+        //{
+        //    task.Start();
+        //    Console.WriteLine($"Task with name {task.Name} was ran now.");
+        //}
+        //else if (task.StartAt > TimeSpan.Zero)
+        //{
+        //    Console.WriteLine($"Task with name {task.Name} was ran after {task.StartAt.Seconds}s.");
+        //    Task.Run(async () =>
+        //    {
+        //        await Task.Delay(task.StartAt);
+        //        task.Start();
+        //    });
+        //}
+        if (task.StartNow)
         {
             task.Start();
             Console.WriteLine($"Task with name {task.Name} was ran now.");
+            return;
         }
-        else if (task.StartAt > TimeSpan.Zero)
+
+        Task.Run(() =>
         {
-            Console.WriteLine($"Task with name {task.Name} was ran after {task.StartAt.Seconds}s.");
-            Task.Run(async () =>
-            {
-                await Task.Delay(task.StartAt);
-                task.Start();
-            });
-        }
+            Console.WriteLine($"Task with name {task.Name} was ran after {task.StartAt.TotalSeconds}s.");
+            //Console.WriteLine()
+            Task.Delay((int)task.StartAt.TotalMilliseconds).Wait();
+            task.Start();
+        });
     }
 
     public void AddTask<T>(TimedTaskDetail timedTaskDetail) where T : ITimedTask
@@ -65,20 +79,19 @@ public class TimeTaskScheduler
         }
 
         Console.WriteLine($"Task with name {timedTaskDetail.Name} was added.");
-        if (timedTaskDetail.StartNow || timedTaskDetail.StartAt == TimeSpan.Zero)
+        if (timedTaskDetail.StartNow)
         {
             timedTaskDetail.Start();
             Console.WriteLine($"Task with name {timedTaskDetail.Name} was ran now.");
+            return;
         }
-        else if (timedTaskDetail.StartAt > TimeSpan.Zero)
+
+        Task.Run(() =>
         {
-            Console.WriteLine($"Task with name {timedTaskDetail.Name} was ran after {timedTaskDetail.StartAt.Seconds}s.");
-            Task.Run(async () =>
-            {
-                await Task.Delay(timedTaskDetail.StartAt);
-                timedTaskDetail.Start();
-            });
-        }
+            Console.WriteLine($"Task with name {timedTaskDetail.Name} was ran after {timedTaskDetail.StartAt.TotalSeconds}s.");
+            Task.Delay(timedTaskDetail.StartAt).Wait();
+            timedTaskDetail.Start();
+        });
     }
 
     public void RemoveTask(string taskName)

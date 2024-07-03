@@ -42,10 +42,12 @@ public partial class TimedTaskDetail
     {
         Task.Run(async () =>
         {
+            //int s = Environment.TickCount;
             //if (StartAt > TimeSpan.Zero)
             //{
             //    await Task.Delay(StartAt, _cts.Token);
             //}
+            //Console.WriteLine(Environment.TickCount - s);
             int repeats = 0;
             #region while
             while (await _periodicTimer.WaitForNextTickAsync(_cts.Token))

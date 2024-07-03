@@ -11,7 +11,7 @@
 		<Owners>ALibrary.$(AssemblyName)</Owners>
 		<Company>ALibrary.Ar4te.$(Authors)</Company>
 		<Product>ALibrary.$(AssemblyName)</Product>
-		<Description>Infrastructure</Description>
+		<Description>TimedTask</Description>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)' == 'Release'">
