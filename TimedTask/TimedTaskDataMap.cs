@@ -1,6 +1,6 @@
 ﻿using System.Collections.Concurrent;
 
-namespace MyTimedTask;
+namespace TimedTask;
 
 public class TimedTaskDataMap : ConcurrentDictionary<string, object>
 {

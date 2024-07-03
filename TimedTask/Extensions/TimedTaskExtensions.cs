@@ -1,7 +1,8 @@
 ﻿using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
+using TimedTask.Base;
 
-namespace MyTimedTask;
+namespace TimedTask.Extensions;
 
 public static class TimedTaskExtensions
 {
@@ -13,7 +14,7 @@ public static class TimedTaskExtensions
         {
             foreach (var type in types)
             {
-                services.AddTransient(typeof(ITimedTask), type);
+                services.AddTransient(type);
             }
         }
         return services;

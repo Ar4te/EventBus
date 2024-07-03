@@ -1,16 +1,18 @@
 ﻿using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
+using MyTimedTask;
+using TimedTask.Base;
 
-namespace MyTimedTask;
+namespace TimedTask;
 
 public class TimeTaskScheduler
 {
     private readonly ConcurrentDictionary<string, TimedTaskDetail> _tasks = new();
-    private readonly IServiceScopeFactory _serviceScopeFactory;
+    //private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly IServiceProvider _serviceProvider;
     public TimeTaskScheduler(IServiceScopeFactory serviceScopeFactory)
     {
-        _serviceScopeFactory = serviceScopeFactory;
+        //_serviceScopeFactory = serviceScopeFactory;
         _serviceProvider = serviceScopeFactory.CreateScope().ServiceProvider;
     }
 

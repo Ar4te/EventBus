@@ -4,7 +4,7 @@ using EventBus.EventLog.EFCore.Extensions;
 using EventBus.Extensions;
 using EventBus.RabbitMQ;
 using Microsoft.EntityFrameworkCore;
-using MyTimedTask;
+using TimedTask;
 using WebApplication1.Apis;
 
 namespace WebApplication1.Extensions;

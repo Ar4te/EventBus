@@ -1,4 +1,4 @@
-﻿using MyTimedTask;
+﻿using TimedTask;
 
 namespace WebApplication1.TimedTasks;
 

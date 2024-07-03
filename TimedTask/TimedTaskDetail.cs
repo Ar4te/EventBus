@@ -1,4 +1,6 @@
-﻿namespace MyTimedTask;
+﻿using TimedTask;
+
+namespace MyTimedTask;
 
 public partial class TimedTaskDetail
 {
@@ -6,14 +8,14 @@ public partial class TimedTaskDetail
     #region Timer
     //private readonly Timer _timer;
     #endregion
-    private readonly PeriodicTimer _periodicTimer;
+    private PeriodicTimer _periodicTimer;
 
     private TimedTaskDetail()
     {
-
+        _cts = new CancellationTokenSource();
     }
 
-    private TimedTaskDetail(string name, TimeSpan interval, Func<Task> taskFunc, TimedTaskDataMap dataMap, bool startNow = false, int startAt = 0, int repeats = -1)
+    private TimedTaskDetail(string name, TimeSpan interval, Func<Task> taskFunc, TimedTaskDataMap dataMap, bool startNow = false, int startAt = 0, int repeats = -1) : this()
     {
         Name = name;
         Interval = interval;
@@ -23,11 +25,9 @@ public partial class TimedTaskDetail
         Repeats = repeats;
         if (startAt < 0) throw new InvalidOperationException(nameof(startAt) + "must bigger than zero");
         StartAt = TimeSpan.FromSeconds(startAt);
-        _cts = new CancellationTokenSource();
         #region Timer
         //_timer = new Timer(async _ => await ExecuteAsync(), null, Timeout.Infinite, Timeout.Infinite);
         #endregion
-        _periodicTimer = new PeriodicTimer(Interval);
     }
 
     public string Name { get; private set; }

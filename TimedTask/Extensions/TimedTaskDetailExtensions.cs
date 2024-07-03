@@ -1,10 +1,17 @@
-﻿namespace MyTimedTask;
+﻿using TimedTask;
+using TimedTask.Base;
+
+namespace MyTimedTask;
 
 public partial class TimedTaskDetail
 {
     public static TimedTaskDetail Build() => new();
 
-    internal void SetInterval(TimeSpan interval) => Interval = interval;
+    internal void SetInterval(TimeSpan interval)
+    {
+        Interval = interval;
+        _periodicTimer = new PeriodicTimer(interval);
+    }
 
     public void SetRepeats(int repeats) => Repeats = repeats;
 

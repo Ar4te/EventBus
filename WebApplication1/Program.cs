@@ -6,6 +6,7 @@ using EventBus.EventLog.EFCore.Utilities;
 using EventBus.EventLog.EFCore.Services;
 using MyTimedTask;
 using WebApplication1.TimedTasks;
+using TimedTask;
 
 namespace WebApplication1;
 
@@ -75,12 +76,28 @@ public class Program
         .WithName("TestEvent")
         .WithOpenApi();
 
-        app.MapGet("/testTimedTask", (HttpContext httpContext, TimeTaskScheduler scheduler) =>
+        app.MapGet("/testTimedTask", (HttpContext httpContext, TimeTaskScheduler scheduler, IServiceProvider serviceProvider) =>
         {
-            for (int i = 0; i < 1000; i++)
+            var ta = serviceProvider.GetRequiredService<CustomTimedTask2>();
+            var dataMap = new TimedTaskDataMap();
+            //for (int i = 0; i < 1000; i++)
+            //{
+            //scheduler.AddTask<CustomTimedTask>($"Task1.{i}", TimeSpan.FromSeconds(1), new TimedTaskDataMap());
+            var t = TimedTaskDetail.Build()
+            .WithName("Task1.1")
+            .WithInterval(TimeSpan.FromSeconds(1))
+            .WithRepeats(3)
+            .For<CustomTimedTask2>(() => ta.Execute(dataMap))
+            .UseTaskDataMap(new TimedTaskDataMap());
+            try
             {
-                scheduler.AddTask<CustomTimedTask>($"Task1.{i}", TimeSpan.FromSeconds(1), new TimedTaskDataMap());
+                scheduler.AddTask<CustomTimedTask2>(t);
             }
+            catch (InvalidOperationException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            //}
             scheduler.StartAll();
 
         })
