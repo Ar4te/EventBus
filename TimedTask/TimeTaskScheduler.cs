@@ -1,4 +1,6 @@
 ﻿using System.Collections.Concurrent;
+using System.Text;
+using System.Xml.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using MyTimedTask;
 using TimedTask.Base;
@@ -8,23 +10,18 @@ namespace TimedTask;
 public class TimeTaskScheduler
 {
     private readonly ConcurrentDictionary<string, TimedTaskDetail> _tasks = new();
-    //private readonly IServiceScopeFactory _serviceScopeFactory;
+    private readonly ConcurrentDictionary<string, TimedTaskDetail> _pausedTasks = new();
     private readonly IServiceProvider _serviceProvider;
     public TimeTaskScheduler(IServiceScopeFactory serviceScopeFactory)
     {
-        //_serviceScopeFactory = serviceScopeFactory;
         _serviceProvider = serviceScopeFactory.CreateScope().ServiceProvider;
     }
 
     public void AddTask<T>(string name, TimeSpan interval, TimedTaskDataMap dataMap,
         bool startNow = false, int startAt = default) where T : ITimedTask
     {
-        //using var scope = _serviceScopeFactory.CreateScope();
-        //var serviceProvider = scope.ServiceProvider;
         var _task = _serviceProvider.GetService(typeof(T)) as ITimedTask ?? throw new ArgumentNullException(typeof(T).Name);
-        dataMap.Put("Name", name);
-
-        var task = TimedTaskDetail.Build()
+        var timedTaskDetail = TimedTaskDetail.Build()
             .WithName(name)
             .WithInterval(interval)
             .For<T>(() => _task.Execute(dataMap))
@@ -33,102 +30,88 @@ public class TimeTaskScheduler
             .StartNow(startNow)
             .StartAt(startAt);
 
-        //var task = new TimedTaskDetail(name, interval, , dataMap, startNow, startAt);
-
-        if (!_tasks.TryAdd(name, task))
-        {
-            throw new InvalidOperationException($"Task with name {task.Name} already exists.");
-        }
-
-        Console.WriteLine($"Task with name {task.Name} was added.");
-        //if (task.StartNow || task.StartAt == TimeSpan.Zero)
-        //{
-        //    task.Start();
-        //    Console.WriteLine($"Task with name {task.Name} was ran now.");
-        //}
-        //else if (task.StartAt > TimeSpan.Zero)
-        //{
-        //    Console.WriteLine($"Task with name {task.Name} was ran after {task.StartAt.Seconds}s.");
-        //    Task.Run(async () =>
-        //    {
-        //        await Task.Delay(task.StartAt);
-        //        task.Start();
-        //    });
-        //}
-        if (task.StartNow)
-        {
-            task.Start();
-            Console.WriteLine($"Task with name {task.Name} was ran now.");
-            return;
-        }
-
-        Task.Run(() =>
-        {
-            Console.WriteLine($"Task with name {task.Name} was ran after {task.StartAt.TotalSeconds}s.");
-            //Console.WriteLine()
-            Task.Delay((int)task.StartAt.TotalMilliseconds).Wait();
-            task.Start();
-        });
+        AddTask<T>(timedTaskDetail);
     }
 
     public void AddTask<T>(TimedTaskDetail timedTaskDetail) where T : ITimedTask
     {
+        timedTaskDetail.TimedTaskDataMap.Put("Name", timedTaskDetail.Name);
         if (!_tasks.TryAdd(timedTaskDetail.Name, timedTaskDetail))
         {
             throw new InvalidOperationException($"Task with name {timedTaskDetail.Name} already exists.");
         }
 
-        Console.WriteLine($"Task with name {timedTaskDetail.Name} was added.");
-        if (timedTaskDetail.StartNow)
-        {
-            timedTaskDetail.Start();
-            Console.WriteLine($"Task with name {timedTaskDetail.Name} was ran now.");
-            return;
-        }
-
-        Task.Run(() =>
-        {
-            Console.WriteLine($"Task with name {timedTaskDetail.Name} was ran after {timedTaskDetail.StartAt.TotalSeconds}s.");
-            Task.Delay(timedTaskDetail.StartAt).Wait();
-            timedTaskDetail.Start();
-        });
+        timedTaskDetail.Start();
     }
 
-    public void RemoveTask(string taskName)
+    public (bool Success, string ErrorMessage) RemoveTask(string taskName)
     {
         if (!_tasks.TryRemove(taskName, out var value))
         {
-            throw new InvalidOperationException($"Task with name {taskName} does not exist.");
+            return (false, $"Task with name {taskName} does not exist.");
         }
 
         value.Stop();
+        return (true, "");
     }
 
-    public void StartAll()
+    public (bool Success, string ErrorMessage) StartAll()
     {
+        var errMsg = new StringBuilder();
         foreach (var task in _tasks.Values)
         {
-            task.Start();
+            try
+            {
+                task.Start();
+            }
+            catch (Exception ex)
+            {
+                errMsg.Append($"启动[{task.Name}]发生异常：" + ex.Message);
+            }
+        }
+
+        return errMsg.Length > 0 ? (false, errMsg.ToString()) : (true, "");
+    }
+
+    public (bool Success, string ErrorMessage) StartTimedTask(string taskName)
+    {
+        try
+        {
+            if (_tasks.TryGetValue(taskName, out var timedTaskDetail))
+            {
+                timedTaskDetail.Start();
+                return (true, "");
+            }
+            else
+            {
+                return (false, $"未找到{taskName}相关任务");
+            }
+        }
+        catch (Exception)
+        {
+            throw;
         }
     }
 
-    public void StartTimedTask(string key)
+    public (bool Success, string ErrorMessage) StopAll()
     {
+        var errMsg = new StringBuilder();
         foreach (var task in _tasks.Values)
         {
-            task.Start();
+            try
+            {
+                task.Stop();
+            }
+            catch (Exception ex)
+            {
+                errMsg.Append($"停止[{task.Name}]发生异常：" + ex.Message);
+            }
         }
+
+        return errMsg.Length > 0 ? (false, errMsg.ToString()) : (true, "");
     }
 
-    public void StopAll()
-    {
-        foreach (var task in _tasks.Values)
-        {
-            task.Stop();
-        }
-    }
-
-    public void StopTaskByName(string taskName)
+    public void StopTask(string taskName)
     {
         if (!_tasks.TryGetValue(taskName, out var task))
         {
@@ -136,5 +119,36 @@ public class TimeTaskScheduler
         }
 
         task.Stop();
+    }
+
+    internal int GetTaskRanCount(string timedTaskName)
+    {
+        if (!_tasks.TryGetValue(timedTaskName, out var task))
+        {
+            throw new InvalidOperationException($"Task with name {timedTaskName} does not exist.");
+        }
+
+        return task.GetRanCount();
+    }
+
+    internal void PauseTask(string timedTaskName)
+    {
+        if (!_tasks.TryGetValue(timedTaskName, out var task))
+        {
+            throw new InvalidOperationException($"Task with name {timedTaskName} does not exist.");
+        }
+
+        _pausedTasks.AddOrUpdate(timedTaskName, task, (_, exist) => task);
+        task.Pause();
+    }
+
+    internal void ResumeTask(string timedTaskName)
+    {
+        if (!_pausedTasks.TryRemove(timedTaskName, out var task))
+        {
+            throw new InvalidOperationException($"Task with name {timedTaskName} does not pause.");
+        }
+
+        task.Resume();
     }
 }

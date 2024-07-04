@@ -10,7 +10,7 @@ public partial class TimedTaskDetail
     internal void SetInterval(TimeSpan interval)
     {
         Interval = interval;
-        _periodicTimer = new PeriodicTimer(interval);
+        InitialPeriodicTimer();
     }
 
     public void SetRepeats(int repeats) => Repeats = repeats;
@@ -19,15 +19,8 @@ public partial class TimedTaskDetail
 
     public void SetTimedTaskDataMap(string key, object value)
     {
-        if (TimedTaskDataMap is null)
-        {
-            TimedTaskDataMap = new TimedTaskDataMap();
-            TimedTaskDataMap.Put(key, value);
-        }
-        else
-        {
-            TimedTaskDataMap.Put(key, value);
-        }
+        TimedTaskDataMap ??= new TimedTaskDataMap();
+        TimedTaskDataMap.Put(key, value);
     }
 
     public void UseTimedTaskDataMap(TimedTaskDataMap timedTaskDataMap) => TimedTaskDataMap = timedTaskDataMap;
@@ -43,6 +36,33 @@ public partial class TimedTaskDetail
     {
         if (startAt < 0) throw new InvalidOperationException(nameof(startAt) + "must bigger than zero");
         StartAt = TimeSpan.FromSeconds(startAt);
+    }
+
+    internal int GetRanCount()
+    {
+        return _ranCount;
+    }
+
+    internal void Pause()
+    {
+        lock (_timedTaskDetailLock)
+        {
+            if (!_isPause)
+            {
+                _isPause = true;
+            }
+        }
+    }
+
+    internal void Resume()
+    {
+        lock (_timedTaskDetailLock)
+        {
+            if (_isPause)
+            {
+                _isPause = false;
+            }
+        }
     }
 }
 

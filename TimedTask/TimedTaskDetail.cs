@@ -5,14 +5,17 @@ namespace MyTimedTask;
 public partial class TimedTaskDetail
 {
     private readonly CancellationTokenSource _cts;
-    #region Timer
-    //private readonly Timer _timer;
-    #endregion
     private PeriodicTimer _periodicTimer;
+    private SemaphoreSlim _semaphoreSlim;
+    private bool _isRunning = false;
+    private int _ranCount = 0;
+    private bool _isPause = false;
+    private readonly object _timedTaskDetailLock = new();
 
     private TimedTaskDetail()
     {
         _cts = new CancellationTokenSource();
+        _semaphoreSlim = new SemaphoreSlim(1, 1);
     }
 
     private TimedTaskDetail(string name, TimeSpan interval, Func<Task> taskFunc, TimedTaskDataMap dataMap, bool startNow = false, int startAt = 0, int repeats = -1) : this()
@@ -25,9 +28,6 @@ public partial class TimedTaskDetail
         Repeats = repeats;
         if (startAt < 0) throw new InvalidOperationException(nameof(startAt) + "must bigger than zero");
         StartAt = TimeSpan.FromSeconds(startAt);
-        #region Timer
-        //_timer = new Timer(async _ => await ExecuteAsync(), null, Timeout.Infinite, Timeout.Infinite);
-        #endregion
     }
 
     public string Name { get; private set; }
@@ -40,65 +40,76 @@ public partial class TimedTaskDetail
 
     public void Start()
     {
+        lock (_timedTaskDetailLock)
+        {
+            if (_isRunning)
+            {
+                throw new InvalidOperationException($"Task [{Name}] is already running.");
+            }
+            _isRunning = true;
+        }
+
+        _periodicTimer ??= new PeriodicTimer(Interval);
+
         Task.Run(async () =>
         {
-            //int s = Environment.TickCount;
-            //if (StartAt > TimeSpan.Zero)
-            //{
-            //    await Task.Delay(StartAt, _cts.Token);
-            //}
-            //Console.WriteLine(Environment.TickCount - s);
-            int repeats = 0;
-            #region while
-            while (await _periodicTimer.WaitForNextTickAsync(_cts.Token))
+            try
             {
-                try
+                if (StartAt > TimeSpan.Zero)
                 {
-                    await TaskFunc();
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
+                    await Task.Delay(StartAt, _cts.Token);
                 }
 
-                repeats++;
-                if (repeats == Repeats) break;
-                //await Task.Delay(Interval, _cts.Token);
+                while (await _periodicTimer.WaitForNextTickAsync(_cts.Token))
+                {
+                    try
+                    {
+                        await _semaphoreSlim.WaitAsync(_cts.Token);
+                        if (_isPause) continue;
+                        await TaskFunc();
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"Error in task [{Name}]: {e}");
+                    }
+                    finally
+                    {
+                        _ranCount++;
+                        _semaphoreSlim.Release();
+                    }
+                    if (_ranCount == Repeats) break;
+                }
             }
-            #endregion
-
-            #region Timer
-            //_timer.Change(TimeSpan.Zero, Interval);
-            #endregion
+            catch (OperationCanceledException)
+            {
+                Console.WriteLine($"Task [{Name}] was canceled.");
+            }
+            finally
+            {
+                Stop();
+            }
             Stop();
         }, _cts.Token);
     }
 
     public void Stop()
     {
+        lock (_timedTaskDetailLock)
+        {
+            if (!_isRunning)
+            {
+                return;
+            }
+            _isRunning = false;
+        }
         _cts.Cancel();
-        //_timer.Change(Timeout.Infinite, Timeout.Infinite);
-        _periodicTimer.Dispose();
+        _periodicTimer?.Dispose();
+        _semaphoreSlim?.Dispose();
     }
 
-    #region Timer
-    //private async Task ExecuteAsync()
-    //{
-    //    try
-    //    {
-    //        await _taskFunc();
-    //    }
-    //    catch (Exception)
-    //    {
-    //        throw;
-    //    }
-    //    finally
-    //    {
-    //        if (!_cts.IsCancellationRequested)
-    //        {
-    //            _timer.Change(Interval, Timeout.InfiniteTimeSpan);
-    //        }
-    //    }
-    //}
-    #endregion
+    private void InitialPeriodicTimer()
+    {
+        _periodicTimer?.Dispose();
+        _periodicTimer = new PeriodicTimer(Interval);
+    }
 }
