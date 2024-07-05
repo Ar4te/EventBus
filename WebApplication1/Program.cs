@@ -105,6 +105,13 @@ public class Program
         .WithName("TestTimedTask")
         .WithOpenApi();
 
+        app.MapGet("/testTimedTaskPause", (HttpContext httpContext, [FromServices] TimeTaskScheduler timeTaskScheduler, [AsParameters] string timedTaskName) =>
+        {
+            timeTaskScheduler.PauseTask(timedTaskName);
+        })
+        .WithName("TestTimedTask")
+        .WithOpenApi();
+
         app.Run();
     }
 }

@@ -27,10 +27,7 @@ public partial class TimedTaskDetail
 
     public void SetStartNow(bool startNow) => StartNow = startNow;
 
-    internal void SetExecuteFunc(Func<Task> func)
-    {
-        TaskFunc = func;
-    }
+    internal void SetExecuteFunc(Func<Task> func) => TaskFunc = func;
 
     internal void SetStartAt(int startAt)
     {

@@ -121,7 +121,7 @@ public class TimeTaskScheduler
         task.Stop();
     }
 
-    internal int GetTaskRanCount(string timedTaskName)
+    public int GetTaskRanCount(string timedTaskName)
     {
         if (!_tasks.TryGetValue(timedTaskName, out var task))
         {
@@ -131,7 +131,7 @@ public class TimeTaskScheduler
         return task.GetRanCount();
     }
 
-    internal void PauseTask(string timedTaskName)
+    public void PauseTask(string timedTaskName)
     {
         if (!_tasks.TryGetValue(timedTaskName, out var task))
         {
@@ -142,7 +142,7 @@ public class TimeTaskScheduler
         task.Pause();
     }
 
-    internal void ResumeTask(string timedTaskName)
+    public void ResumeTask(string timedTaskName)
     {
         if (!_pausedTasks.TryRemove(timedTaskName, out var task))
         {
