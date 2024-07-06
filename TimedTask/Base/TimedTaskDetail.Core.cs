@@ -1,8 +1,8 @@
-﻿using TimedTask;
+﻿using TimedTask.Base;
 
-namespace MyTimedTask;
+namespace TimedTask;
 
-public partial class TimedTaskDetail
+public sealed partial class TimedTaskDetail
 {
     private readonly CancellationTokenSource _cts;
     private PeriodicTimer _periodicTimer;
@@ -37,6 +37,7 @@ public partial class TimedTaskDetail
     public int Repeats { get; private set; }
     public TimeSpan StartAt { get; private set; }
     public Func<Task> TaskFunc { get; private set; }
+    public string Group { get; private set; } = "Default";
 
     public void Start()
     {

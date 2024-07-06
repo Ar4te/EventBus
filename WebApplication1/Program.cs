@@ -1,12 +1,12 @@
-
+using EventBus.EventLog.EFCore.Services;
+using EventBus.EventLog.EFCore.Utilities;
 using Microsoft.AspNetCore.Mvc;
+using TimedTask;
+using TimedTask.Base;
+using TimedTask.Extensions;
 using WebApplication1.Apis;
 using WebApplication1.Extensions;
-using EventBus.EventLog.EFCore.Utilities;
-using EventBus.EventLog.EFCore.Services;
-using MyTimedTask;
 using WebApplication1.TimedTasks;
-using TimedTask;
 
 namespace WebApplication1;
 
@@ -76,7 +76,7 @@ public class Program
         .WithName("TestEvent")
         .WithOpenApi();
 
-        app.MapGet("/testTimedTask", (HttpContext httpContext, TimeTaskScheduler scheduler, IServiceProvider serviceProvider) =>
+        app.MapGet("/testTimedTask", (HttpContext httpContext, TimedTaskScheduler scheduler, IServiceProvider serviceProvider) =>
         {
             var ta = serviceProvider.GetRequiredService<CustomTimedTask2>();
             var dataMap = new TimedTaskDataMap();
@@ -86,7 +86,7 @@ public class Program
             var t = TimedTaskDetail.Build()
             .WithName("Task1.1")
             .WithInterval(TimeSpan.FromSeconds(1))
-            .WithRepeats(3)
+            .WithRepeats(-1)
             .For<CustomTimedTask2>(() => ta.Execute(dataMap))
             .StartAt(10)
             .UseTaskDataMap(new TimedTaskDataMap());
@@ -105,11 +105,18 @@ public class Program
         .WithName("TestTimedTask")
         .WithOpenApi();
 
-        app.MapGet("/testTimedTaskPause", (HttpContext httpContext, [FromServices] TimeTaskScheduler timeTaskScheduler, [AsParameters] string timedTaskName) =>
+        app.MapGet("/testTimedTaskPause", (HttpContext httpContext, [FromServices] TimedTaskScheduler timeTaskScheduler, string timedTaskGroupName) =>
         {
-            timeTaskScheduler.PauseTask(timedTaskName);
+            return timeTaskScheduler.PauseTasks(timedTaskGroupName).IsSuccess;
         })
-        .WithName("TestTimedTask")
+        .WithName("TestTimedTaskPause")
+        .WithOpenApi();
+
+        app.MapGet("/testTimedTaskResume", (HttpContext httpContext, [FromServices] TimedTaskScheduler timeTaskScheduler, string timedTaskGroupName) =>
+        {
+            return timeTaskScheduler.ResumeTasks(timedTaskGroupName).IsSuccess;
+        })
+        .WithName("TestTimedTaskResume")
         .WithOpenApi();
 
         app.Run();

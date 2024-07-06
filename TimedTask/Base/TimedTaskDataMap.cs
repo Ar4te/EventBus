@@ -1,8 +1,8 @@
 ﻿using System.Collections.Concurrent;
 
-namespace TimedTask;
+namespace TimedTask.Base;
 
-public class TimedTaskDataMap : ConcurrentDictionary<string, object>
+public sealed class TimedTaskDataMap : ConcurrentDictionary<string, object>
 {
     public void Put<T>(string key, T value)
     {
