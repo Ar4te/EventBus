@@ -15,7 +15,7 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)' == 'Release'">
-		<VersionSuffix>0.1</VersionSuffix>
+		<VersionSuffix>0.3</VersionSuffix>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 	</PropertyGroup>
 

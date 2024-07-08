@@ -20,11 +20,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="ALibrary.Infrastructure" Version="1.0.0-0.3" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
 	</ItemGroup>
 
 </Project>
