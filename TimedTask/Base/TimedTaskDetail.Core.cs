@@ -14,6 +14,7 @@ public sealed partial class TimedTaskDetail
 
     private TimedTaskDetail()
     {
+        Id = Guid.NewGuid();
         _cts = new CancellationTokenSource();
         _semaphoreSlim = new SemaphoreSlim(1, 1);
     }
@@ -30,6 +31,7 @@ public sealed partial class TimedTaskDetail
         StartAt = TimeSpan.FromSeconds(startAt);
     }
 
+    public Guid Id { get; }
     public string Name { get; private set; }
     public TimeSpan Interval { get; private set; }
     public TimedTaskDataMap TimedTaskDataMap { get; private set; }
@@ -63,6 +65,7 @@ public sealed partial class TimedTaskDetail
 
                 while (await _periodicTimer.WaitForNextTickAsync(_cts.Token))
                 {
+                    var @lock = await TimedTaskLockManager.GetLockAsync(Id);
                     try
                     {
                         await _semaphoreSlim.WaitAsync(_cts.Token);
@@ -77,6 +80,7 @@ public sealed partial class TimedTaskDetail
                     {
                         _ranCount++;
                         _semaphoreSlim.Release();
+                        @lock.Release();
                     }
                     if (_ranCount == Repeats) break;
                 }
@@ -88,8 +92,8 @@ public sealed partial class TimedTaskDetail
             finally
             {
                 Stop();
+
             }
-            Stop();
         }, _cts.Token);
     }
 
