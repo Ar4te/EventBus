@@ -1,22 +1,22 @@
 ﻿using TimedTask.Base;
+using TimedTask.Lock;
 
 namespace TimedTask;
 
-public sealed partial class TimedTaskDetail
+public sealed partial class TimedTaskDetail : IDisposable
 {
     private readonly CancellationTokenSource _cts;
     private PeriodicTimer _periodicTimer;
-    private SemaphoreSlim _semaphoreSlim;
-    private bool _isRunning = false;
+    private volatile bool _isRunning = false;
     private int _ranCount = 0;
     private bool _isPause = false;
+    private bool _disposedValue;
     private readonly object _timedTaskDetailLock = new();
 
     private TimedTaskDetail()
     {
         Id = Guid.NewGuid();
         _cts = new CancellationTokenSource();
-        _semaphoreSlim = new SemaphoreSlim(1, 1);
     }
 
     private TimedTaskDetail(string name, TimeSpan interval, Func<Task> taskFunc, TimedTaskDataMap dataMap, bool startNow = false, int startAt = 0, int repeats = -1) : this()
@@ -43,14 +43,12 @@ public sealed partial class TimedTaskDetail
 
     public void Start()
     {
-        lock (_timedTaskDetailLock)
+        if (_isRunning)
         {
-            if (_isRunning)
-            {
-                throw new InvalidOperationException($"Task [{Name}] is already running.");
-            }
-            _isRunning = true;
+            throw new InvalidOperationException($"Task [{Name}] is already running.");
         }
+
+        _isRunning = true;
 
         _periodicTimer ??= new PeriodicTimer(Interval);
 
@@ -65,56 +63,76 @@ public sealed partial class TimedTaskDetail
 
                 while (await _periodicTimer.WaitForNextTickAsync(_cts.Token))
                 {
-                    var @lock = await TimedTaskLockManager.GetLockAsync(Id);
-                    try
+                    using (var taskLock = await TimedTaskLockManager.GetLockAsync(Id))
                     {
-                        await _semaphoreSlim.WaitAsync(_cts.Token);
-                        if (_isPause) continue;
-                        await TaskFunc();
+                        try
+                        {
+                            if (_isPause) continue;
+                            await TaskFunc();
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine($"Error in task [{Name}]: {e}");
+                        }
+                        finally
+                        {
+                            _ranCount++;
+                        }
+                        if (_ranCount == Repeats) break;
                     }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine($"Error in task [{Name}]: {e}");
-                    }
-                    finally
-                    {
-                        _ranCount++;
-                        _semaphoreSlim.Release();
-                        @lock.Release();
-                    }
-                    if (_ranCount == Repeats) break;
                 }
             }
             catch (OperationCanceledException)
             {
                 Console.WriteLine($"Task [{Name}] was canceled.");
             }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Unexpected error in task [{Name}]: {e}");
+            }
             finally
             {
                 Stop();
-
             }
         }, _cts.Token);
     }
 
     public void Stop()
     {
-        lock (_timedTaskDetailLock)
-        {
-            if (!_isRunning)
-            {
-                return;
-            }
+        if (_isRunning)
             _isRunning = false;
-        }
         _cts.Cancel();
-        _periodicTimer?.Dispose();
-        _semaphoreSlim?.Dispose();
     }
 
     private void InitialPeriodicTimer()
     {
         _periodicTimer?.Dispose();
         _periodicTimer = new PeriodicTimer(Interval);
+    }
+
+    private void Dispose(bool disposing)
+    {
+        if (!_disposedValue)
+        {
+            if (disposing)
+            {
+                _cts.Cancel();
+                _periodicTimer?.Dispose();
+                _cts.Dispose();
+            }
+
+            _disposedValue = true;
+        }
+    }
+
+    ~TimedTaskDetail()
+    {
+        Dispose(disposing: false);
+    }
+
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }

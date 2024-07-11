@@ -26,7 +26,7 @@ public sealed partial class TimedTaskScheduler
         var timedTaskDetail = TimedTaskDetail.Build()
             .WithName(name)
             .WithInterval(interval)
-            .For<T>(() => _task.Execute(dataMap))
+            .For<T>(async () => await _task.Execute(dataMap))
             .WithRepeats()
             .UseTaskDataMap(dataMap)
             .StartNow(startNow)
