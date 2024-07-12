@@ -1,4 +1,6 @@
-﻿namespace TimedTask.Base;
+﻿using Infrastructure;
+
+namespace TimedTask.Base;
 
 public sealed partial class TimedTaskScheduler
 {
@@ -10,13 +12,13 @@ public sealed partial class TimedTaskScheduler
             {
                 timedTask.Stop();
                 _timedTaskGroupInfos[timedTask.Group].Remove(timedTask.Name);
-                return OperateResultExtension.Success();
+                return Success();
             }
-            return OperateResultExtension.Fail($"停止[{timedTask.Name}]发生异常：" + "从运行列表中删除任务失败");
+            return Fail($"停止[{timedTask.Name}]发生异常：" + "从运行列表中删除任务失败");
         }
         catch (Exception ex)
         {
-            return OperateResultExtension.Fail($"停止[{timedTask.Name}]发生异常：" + ex.Message);
+            return Fail($"停止[{timedTask.Name}]发生异常：" + ex.Message);
         }
     }
 
@@ -24,13 +26,13 @@ public sealed partial class TimedTaskScheduler
     {
         try
         {
-            timedTask.Start();
+            _taskFactory.StartNew(async () => await timedTask.Start());
             _runningTasks.AddOrUpdate(timedTask.Name, timedTask, (_, old) => timedTask);
-            return OperateResultExtension.Success();
+            return Success();
         }
         catch (Exception ex)
         {
-            return OperateResultExtension.Fail($"启动[{timedTask.Name}]发生异常：" + ex.Message);
+            return Fail($"启动[{timedTask.Name}]发生异常：" + ex.Message);
         }
     }
 }

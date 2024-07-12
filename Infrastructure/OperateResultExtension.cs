@@ -1,4 +1,4 @@
-﻿namespace TimedTask.Base;
+﻿namespace Infrastructure;
 
 public static class OperateResultExtension
 {

@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿global using static Infrastructure.OperateResultExtension;
+using System.Collections.Concurrent;
 using System.Text;
 using Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,10 +14,12 @@ public sealed partial class TimedTaskScheduler
     private readonly ConcurrentDictionary<string, TimedTaskDetail> _pausedTasks = new();
     private readonly ConcurrentDictionary<string, ThreadSafeBag<string>> _timedTaskGroupInfos = new();
     private readonly IServiceProvider _serviceProvider;
+    private readonly TaskFactory _taskFactory;
 
     public TimedTaskScheduler(IServiceScopeFactory serviceScopeFactory)
     {
         _serviceProvider = serviceScopeFactory.CreateScope().ServiceProvider;
+        _taskFactory = new TaskFactory();
     }
 
     public void AddTask<T>(string name, TimeSpan interval, TimedTaskDataMap dataMap,
@@ -70,9 +73,7 @@ public sealed partial class TimedTaskScheduler
             }
         }
 
-        return errMsg.Length > 0 ?
-            OperateResultExtension.Fail(errMsg.ToString()) :
-            OperateResultExtension.Success();
+        return errMsg.Length > 0 ? Fail(errMsg.ToString()) : Success();
     }
 
     public OperateResult StartTimedTask(string taskName)
@@ -83,7 +84,7 @@ public sealed partial class TimedTaskScheduler
             {
                 return StartTask(timedTaskDetail);
             }
-            return OperateResultExtension.Fail($"Task with name {taskName} does not exist.");
+            return Fail($"Task with name {taskName} does not exist.");
         }
         catch (Exception)
         {
@@ -155,24 +156,24 @@ public sealed partial class TimedTaskScheduler
     {
         if (_timedTaskGroupInfos.ContainsKey(groupName) && _timedTaskGroupInfos.TryGetValue(groupName, out var bag) && bag.Count != 0)
         {
-            StringBuilder errMsg = new();
-            foreach (var timedTaskName in bag.Values)
+            List<string> errMsg = new();
+            Parallel.ForEach(bag.Values, timedTaskName =>
             {
-                if (PauseTask(timedTaskName) is { IsSuccess: false } result)
+                if (PauseTask(timedTaskName) is { IsSuccess: false })
                 {
-                    errMsg.AppendLine(timedTaskName);
+                    errMsg.Add(timedTaskName);
                 }
-            }
+            });
 
-            if (errMsg.Length > 0)
+            if (errMsg?.Count > 0)
             {
-                return OperateResultExtension.Fail(errMsg.ToString());
+                return Fail(string.Join(';', errMsg));
             }
 
-            return OperateResultExtension.Success();
+            return Success();
         }
 
-        return OperateResultExtension.Fail($"{groupName} does not exist");
+        return Fail($"{groupName} does not exist");
     }
 
     public OperateResult ResumeTasks(string groupName)
@@ -190,12 +191,12 @@ public sealed partial class TimedTaskScheduler
 
             if (errMsg.Length > 0)
             {
-                return OperateResultExtension.Fail(errMsg.ToString());
+                return Fail(errMsg.ToString());
             }
 
-            return OperateResultExtension.Success();
+            return Success();
         }
 
-        return OperateResultExtension.Fail($"{groupName} does not exist");
+        return Fail($"{groupName} does not exist");
     }
 }

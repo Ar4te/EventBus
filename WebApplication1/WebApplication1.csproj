@@ -8,8 +8,6 @@
 
 	<ItemGroup>
 		<PackageReference Include="ALibrary.EventBus.RabbitMQ" Version="1.0.0-1" />
-		<PackageReference Include="ALibrary.Infrastructure" Version="1.0.0-0.3" />
-		<PackageReference Include="ALibrary.TimedTask" Version="1.0.0-0.1" />
 		<PackageReference Include="Aspire.StackExchange.Redis" Version="8.0.1" />
 		<PackageReference Include="MediatR" Version="12.3.0" />
 		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.5" />
@@ -22,6 +20,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\EventBus.EventLog.EFCore\EventBus.EventLog.EFCore.csproj" />
 		<ProjectReference Include="..\EventBus.ServiceDefaults\EventBus.ServiceDefaults.csproj" />
+		<ProjectReference Include="..\TimedTask\TimedTask.csproj" />
 	</ItemGroup>
 
 </Project>

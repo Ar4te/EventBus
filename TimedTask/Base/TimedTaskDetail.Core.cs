@@ -41,7 +41,7 @@ public sealed partial class TimedTaskDetail : IDisposable
     public Func<Task> TaskFunc { get; private set; }
     public string Group { get; private set; } = "Default";
 
-    public void Start()
+    public async Task Start()
     {
         if (_isRunning)
         {
@@ -52,49 +52,51 @@ public sealed partial class TimedTaskDetail : IDisposable
 
         _periodicTimer ??= new PeriodicTimer(Interval);
 
-        Task.Run(async () =>
-        {
-            try
-            {
-                if (StartAt > TimeSpan.Zero)
-                {
-                    await Task.Delay(StartAt, _cts.Token);
-                }
+        await Task.Run(async () =>
+          {
+              try
+              {
+                  if (StartAt > TimeSpan.Zero)
+                  {
+                      await Task.Delay(StartAt, _cts.Token);
+                  }
 
-                while (await _periodicTimer.WaitForNextTickAsync(_cts.Token))
-                {
-                    using (var taskLock = await TimedTaskLockManager.GetLockAsync(Id))
-                    {
-                        try
-                        {
-                            if (_isPause) continue;
-                            await TaskFunc();
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine($"Error in task [{Name}]: {e}");
-                        }
-                        finally
-                        {
-                            _ranCount++;
-                        }
-                        if (_ranCount == Repeats) break;
-                    }
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                Console.WriteLine($"Task [{Name}] was canceled.");
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"Unexpected error in task [{Name}]: {e}");
-            }
-            finally
-            {
-                Stop();
-            }
-        }, _cts.Token);
+                  while (await _periodicTimer.WaitForNextTickAsync(_cts.Token))
+                  {
+                      if (_isPause) continue;
+                      var taskLock = await TimedTaskLockManager.GetLockAsync(Id);
+
+                      try
+                      {
+                          await TaskFunc();
+                      }
+                      catch (Exception e)
+                      {
+                          Console.WriteLine($"Error in task [{Name}]: {e}");
+                      }
+                      finally
+                      {
+                          taskLock.Release();
+                          _ranCount++;
+                      }
+                      if (_ranCount == Repeats) break;
+
+                  }
+              }
+              catch (OperationCanceledException)
+              {
+                  Console.WriteLine($"Task [{Name}] was canceled.");
+              }
+              catch (Exception e)
+              {
+                  Console.WriteLine($"Unexpected error in task [{Name}]: {e}");
+              }
+              finally
+              {
+                  Stop();
+              }
+          },
+          _cts.Token);
     }
 
     public void Stop()

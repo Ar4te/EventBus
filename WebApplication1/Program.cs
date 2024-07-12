@@ -80,25 +80,26 @@ public class Program
         {
             var ta = serviceProvider.GetRequiredService<CustomTimedTask2>();
             var dataMap = new TimedTaskDataMap();
-            //for (int i = 0; i < 1000; i++)
-            //{
             //scheduler.AddTask<CustomTimedTask>($"Task1.{i}", TimeSpan.FromSeconds(1), new TimedTaskDataMap());
-            var t = TimedTaskDetail.Build()
-            .WithName("Task1.1")
-            .WithInterval(TimeSpan.FromSeconds(1))
-            .WithRepeats(-1)
-            .For<CustomTimedTask2>(() => ta.Execute(dataMap))
-            .StartAt(10)
-            .UseTaskDataMap(new TimedTaskDataMap());
-            try
+
+            for (int i = 0; i < 300; i++)
             {
-                scheduler.AddTask<CustomTimedTask2>(t);
+                var t = TimedTaskDetail.Build()
+                .WithName($"Task1.{i}")
+                .WithInterval(TimeSpan.FromSeconds(1))
+                .WithRepeats(-1)
+                .For<CustomTimedTask2>(() => ta.Execute(dataMap))
+                .StartAt(10)
+                .UseTaskDataMap(new TimedTaskDataMap());
+                try
+                {
+                    scheduler.AddTask<CustomTimedTask2>(t);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
             }
-            catch (InvalidOperationException ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
-            //}
             scheduler.StartAll();
 
         })

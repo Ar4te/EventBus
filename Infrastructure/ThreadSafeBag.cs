@@ -1,9 +1,8 @@
-﻿using System.Collections;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 
 namespace Infrastructure;
 
-public class ThreadSafeBag<T> : IEquatable<ThreadSafeBag<T>>
+public sealed class ThreadSafeBag<T> : IEquatable<ThreadSafeBag<T>>
     where T : IEquatable<T>
 {
     private readonly ConcurrentBag<T> _bag;
