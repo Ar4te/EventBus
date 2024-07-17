@@ -35,10 +35,10 @@ public sealed partial class TimedTaskScheduler
             .StartNow(startNow)
             .StartAt(startAt);
 
-        AddTask<T>(timedTaskDetail);
+        AddTask(timedTaskDetail);
     }
 
-    public void AddTask<T>(TimedTaskDetail timedTaskDetail) where T : ITimedTask
+    public void AddTask(TimedTaskDetail timedTaskDetail)
     {
         timedTaskDetail.TimedTaskDataMap.Put("Name", timedTaskDetail.Name);
         if (!_tasks.TryAdd(timedTaskDetail.Name, timedTaskDetail))
@@ -86,8 +86,9 @@ public sealed partial class TimedTaskScheduler
             }
             return Fail($"Task with name {taskName} does not exist.");
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine(ex.Message);
             throw;
         }
     }
@@ -103,9 +104,7 @@ public sealed partial class TimedTaskScheduler
             }
         }
 
-        return errMsg.Length > 0 ?
-            OperateResultExtension.Fail(errMsg.ToString()) :
-            OperateResultExtension.Success();
+        return errMsg.Length > 0 ? Fail(errMsg.ToString()) : Success();
     }
 
     public OperateResult StopTask(string taskName)
@@ -132,24 +131,24 @@ public sealed partial class TimedTaskScheduler
     {
         if (!_runningTasks.TryRemove(timedTaskName, out var task))
         {
-            return OperateResultExtension.Fail($"Task with name {timedTaskName} does not run.");
+            return Fail($"Task with name {timedTaskName} does not run.");
         }
 
         task.Pause();
         _pausedTasks.AddOrUpdate(timedTaskName, task, (_, exist) => task);
-        return OperateResultExtension.Success($"{timedTaskName} was paused successful");
+        return Success($"{timedTaskName} was paused successful");
     }
 
     public OperateResult ResumeTask(string timedTaskName)
     {
         if (!_pausedTasks.TryRemove(timedTaskName, out var task))
         {
-            return OperateResultExtension.Fail($"Task with name {timedTaskName} does not pause.");
+            return Fail($"Task with name {timedTaskName} does not pause.");
         }
 
         task.Resume();
         _runningTasks.AddOrUpdate(timedTaskName, task, (_, exist) => task);
-        return OperateResultExtension.Success($"{timedTaskName} was resumed successful");
+        return Success($"{timedTaskName} was resumed successful");
     }
 
     public OperateResult PauseTasks(string groupName)
@@ -181,12 +180,9 @@ public sealed partial class TimedTaskScheduler
         if (_timedTaskGroupInfos.ContainsKey(groupName) && _timedTaskGroupInfos.TryGetValue(groupName, out var bag) && bag.Count != 0)
         {
             StringBuilder errMsg = new();
-            foreach (var timedTaskName in bag.Values)
+            foreach (var item in bag.Values.Select(timedTaskName => ResumeTask(timedTaskName)).Where(t => t is { IsSuccess: false }))
             {
-                if (ResumeTask(timedTaskName) is { IsSuccess: false } result)
-                {
-                    errMsg.AppendLine(timedTaskName);
-                }
+                errMsg.AppendLine(item.ErrorMessage);
             }
 
             if (errMsg.Length > 0)

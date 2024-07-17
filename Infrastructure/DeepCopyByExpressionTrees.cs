@@ -15,7 +15,7 @@ public static class DeepCopyByExpressionTrees
         new Dictionary<Type, Func<object, Dictionary<object, object>, object>>();
 
     private static readonly Type _objectType = typeof(object);
-    private static readonly Type ObjectDictionaryType = typeof(Dictionary<object, object>);
+    private static readonly Type _objectDictionaryType = typeof(Dictionary<object, object>);
 
     /// <summary>
     /// 创建对象的深度拷贝
@@ -24,7 +24,7 @@ public static class DeepCopyByExpressionTrees
     /// <param name="original">要复制的对象</param>
     /// <param name="copiedReferencesDict">已复制对象的字典（原始对象，拷贝）</param>
     /// <returns></returns>
-    public static T DeepCopy<T>(this T original, Dictionary<object, object> copiedReferencesDict = null)
+    public static T DeepCopy<T>(this T original, Dictionary<object, object>? copiedReferencesDict = null)
     {
         return (T)DeepCopyByExpressionTreeObj(original, false, copiedReferencesDict ?? new Dictionary<object, object>(new ReferenceEqualityComparer()));
     }
@@ -110,7 +110,7 @@ public static class DeepCopyByExpressionTrees
     private static void InitializeExpressions(Type type, out ParameterExpression inputParameter, out ParameterExpression inputDictionary, out ParameterExpression outputVariable, out ParameterExpression boxingVariable, out LabelTarget endLabel, out List<ParameterExpression> variables, out List<Expression> expressions)
     {
         inputParameter = Expression.Parameter(_objectType);
-        inputDictionary = Expression.Parameter(ObjectDictionaryType);
+        inputDictionary = Expression.Parameter(_objectDictionaryType);
         outputVariable = Expression.Variable(type);
         boxingVariable = Expression.Variable(_objectType);
         endLabel = Expression.Label();
@@ -163,7 +163,7 @@ public static class DeepCopyByExpressionTrees
             Expression.Assign(
                 Expression.Property(
                     inputDictionary,
-                    ObjectDictionaryType.GetProperty("Item"),
+                    _objectDictionaryType.GetProperty("Item"),
                     inputParameter),
                 Expression.Convert(outputVariable, _objectType));
         expressions.Add(storeReferencesExpression);

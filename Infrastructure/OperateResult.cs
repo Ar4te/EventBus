@@ -8,6 +8,7 @@ public class OperateResult
     public OperateResult()
     {
         IsSuccess = false;
+        ErrorMessage = "";
     }
 
     public OperateResult(bool isSuccess, string errorMessage)
