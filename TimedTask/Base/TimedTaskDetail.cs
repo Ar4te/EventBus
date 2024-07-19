@@ -3,10 +3,11 @@ using TimedTask.Lock;
 
 namespace TimedTask;
 
+#region core
 public sealed partial class TimedTaskDetail : IDisposable
 {
     private readonly CancellationTokenSource _cts;
-    private PeriodicTimer _periodicTimer;
+    private PeriodicTimer? _periodicTimer;
     private volatile bool _isRunning = false;
     private int _ranCount = 0;
     private bool _isPause = false;
@@ -17,18 +18,6 @@ public sealed partial class TimedTaskDetail : IDisposable
     {
         Id = Guid.NewGuid();
         _cts = new CancellationTokenSource();
-    }
-
-    private TimedTaskDetail(string name, TimeSpan interval, Func<Task> taskFunc, TimedTaskDataMap dataMap, bool startNow = false, int startAt = 0, int repeats = -1) : this()
-    {
-        Name = name;
-        Interval = interval;
-        TaskFunc = taskFunc;
-        TimedTaskDataMap = dataMap;
-        StartNow = startNow;
-        Repeats = repeats;
-        if (startAt < 0) throw new InvalidOperationException(nameof(startAt) + "must bigger than zero");
-        StartAt = TimeSpan.FromSeconds(startAt);
     }
 
     public Guid Id { get; }
@@ -43,12 +32,14 @@ public sealed partial class TimedTaskDetail : IDisposable
 
     public async Task Start()
     {
-        if (_isRunning)
+        lock (_timedTaskDetailLock)
         {
-            throw new InvalidOperationException($"Task [{Name}] is already running.");
+            if (_isRunning)
+            {
+                throw new InvalidOperationException($"Task [{Name}] is already running.");
+            }
+            _isRunning = true;
         }
-
-        _isRunning = true;
 
         _periodicTimer ??= new PeriodicTimer(Interval);
 
@@ -80,7 +71,6 @@ public sealed partial class TimedTaskDetail : IDisposable
                           _ranCount++;
                       }
                       if (_ranCount == Repeats) break;
-
                   }
               }
               catch (OperationCanceledException)
@@ -101,9 +91,12 @@ public sealed partial class TimedTaskDetail : IDisposable
 
     public void Stop()
     {
-        if (_isRunning)
-            _isRunning = false;
-        _cts.Cancel();
+        lock (_timedTaskDetailLock)
+        {
+            if (_isRunning)
+                _isRunning = false;
+            _cts.Cancel();
+        }
     }
 
     private void InitialPeriodicTimer()
@@ -120,6 +113,7 @@ public sealed partial class TimedTaskDetail : IDisposable
             {
                 _cts.Cancel();
                 _periodicTimer?.Dispose();
+                _periodicTimer = null;
                 _cts.Dispose();
             }
 
@@ -138,3 +132,72 @@ public sealed partial class TimedTaskDetail : IDisposable
         GC.SuppressFinalize(this);
     }
 }
+#endregion
+
+#region builder
+public sealed partial class TimedTaskDetail
+{
+    public static TimedTaskDetail Build() => new();
+
+    internal void SetInterval(TimeSpan interval)
+    {
+        Interval = interval;
+        InitialPeriodicTimer();
+    }
+
+    internal void SetRepeats(int repeats)
+    {
+        if (repeats < -1)
+        {
+            repeats = -1;
+        }
+        Repeats = repeats;
+    }
+
+    internal void SetTimedTaskName(string timedTaskName) => Name = timedTaskName;
+
+    internal void SetTimedTaskDataMap(string key, object value)
+    {
+        TimedTaskDataMap ??= new TimedTaskDataMap();
+        TimedTaskDataMap.Put(key, value);
+    }
+
+    internal void UseTimedTaskDataMap(TimedTaskDataMap timedTaskDataMap) => TimedTaskDataMap = timedTaskDataMap;
+
+    internal void SetStartNow(bool startNow) => StartNow = startNow;
+
+    internal void SetExecuteFunc(Func<Task> func) => TaskFunc = func;
+
+    internal void SetStartAt(int startAt)
+    {
+        if (startAt < 0) throw new InvalidOperationException(nameof(startAt) + "must bigger than zero");
+        StartAt = TimeSpan.FromSeconds(startAt);
+    }
+
+    internal int GetRanCount() => _ranCount;
+
+    internal void Pause()
+    {
+        lock (_timedTaskDetailLock)
+        {
+            if (!_isPause)
+            {
+                _isPause = true;
+            }
+        }
+    }
+
+    internal void Resume()
+    {
+        lock (_timedTaskDetailLock)
+        {
+            if (_isPause)
+            {
+                _isPause = false;
+            }
+        }
+    }
+
+    internal void SetGroup(string groupName) => Group = groupName;
+}
+#endregion

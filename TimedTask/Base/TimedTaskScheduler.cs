@@ -7,6 +7,7 @@ using TimedTask.Extensions;
 
 namespace TimedTask.Base;
 
+#region core
 public sealed partial class TimedTaskScheduler
 {
     private readonly ConcurrentDictionary<string, TimedTaskDetail> _tasks = new();
@@ -14,12 +15,10 @@ public sealed partial class TimedTaskScheduler
     private readonly ConcurrentDictionary<string, TimedTaskDetail> _pausedTasks = new();
     private readonly ConcurrentDictionary<string, ThreadSafeBag<string>> _timedTaskGroupInfos = new();
     private readonly IServiceProvider _serviceProvider;
-    private readonly TaskFactory _taskFactory;
 
     public TimedTaskScheduler(IServiceScopeFactory serviceScopeFactory)
     {
         _serviceProvider = serviceScopeFactory.CreateScope().ServiceProvider;
-        _taskFactory = new TaskFactory();
     }
 
     public void AddTask<T>(string name, TimeSpan interval, TimedTaskDataMap dataMap,
@@ -196,3 +195,41 @@ public sealed partial class TimedTaskScheduler
         return Fail($"{groupName} does not exist");
     }
 }
+#endregion
+
+#region PrivateMethod
+public sealed partial class TimedTaskScheduler
+{
+    private OperateResult StopTask(TimedTaskDetail timedTask)
+    {
+        try
+        {
+            if (_runningTasks.TryRemove(new(timedTask.Name, timedTask)))
+            {
+                timedTask.Stop();
+                _timedTaskGroupInfos[timedTask.Group].Remove(timedTask.Name);
+                return Success();
+            }
+            return Fail($"停止[{timedTask.Name}]发生异常：" + "从运行列表中删除任务失败");
+        }
+        catch (Exception ex)
+        {
+            return Fail($"停止[{timedTask.Name}]发生异常：" + ex.Message);
+        }
+    }
+
+    private OperateResult StartTask(TimedTaskDetail timedTask)
+    {
+        try
+        {
+            _ = Task.Run(async () => await timedTask.Start());
+            _runningTasks.AddOrUpdate(timedTask.Name, timedTask, (_, old) => timedTask);
+            return Success();
+        }
+        catch (Exception ex)
+        {
+            return Fail($"启动[{timedTask.Name}]发生异常：" + ex.Message);
+        }
+    }
+}
+#endregion

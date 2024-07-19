@@ -82,7 +82,7 @@ public class Program
             var dataMap = new TimedTaskDataMap();
             //scheduler.AddTask<CustomTimedTask>($"Task1.{i}", TimeSpan.FromSeconds(1), new TimedTaskDataMap());
 
-            for (int i = 0; i < 300; i++)
+            for (int i = 0; i < 50; i++)
             {
                 var t = TimedTaskDetail.Build()
                 .WithName($"Task1.{i}")
@@ -93,7 +93,7 @@ public class Program
                 .UseTaskDataMap(new TimedTaskDataMap());
                 try
                 {
-                    scheduler.AddTask<CustomTimedTask2>(t);
+                    scheduler.AddTask(t);
                 }
                 catch (InvalidOperationException ex)
                 {
