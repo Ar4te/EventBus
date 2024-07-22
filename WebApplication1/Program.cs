@@ -7,6 +7,7 @@ using TimedTask.Extensions;
 using WebApplication1.Apis;
 using WebApplication1.Extensions;
 using WebApplication1.TimedTasks;
+using WebApplication1.VerificationCode;
 
 namespace WebApplication1;
 
@@ -118,6 +119,14 @@ public class Program
             return timeTaskScheduler.ResumeTasks(timedTaskGroupName).IsSuccess;
         })
         .WithName("TestTimedTaskResume")
+        .WithOpenApi();
+
+        app.MapGet("/testVerificationCode", (HttpContext httpContext) =>
+        {
+            var randomText = VerificationCodeHelper.GetRandomCode(4);
+            return Results.File(VerificationCodeHelper.GetVerificationCode(randomText), "image/png");
+        })
+        .WithName("TestVerificationCode")
         .WithOpenApi();
 
         app.Run();
