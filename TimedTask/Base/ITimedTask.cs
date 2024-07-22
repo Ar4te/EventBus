@@ -1,4 +1,4 @@
-﻿namespace MyTimedTask;
+﻿namespace TimedTask.Base;
 
 public interface ITimedTask
 {

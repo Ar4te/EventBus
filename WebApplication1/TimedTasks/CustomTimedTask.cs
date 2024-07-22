@@ -1,4 +1,4 @@
-﻿using MyTimedTask;
+﻿using TimedTask.Base;
 
 namespace WebApplication1.TimedTasks;
 
@@ -10,10 +10,11 @@ public class CustomTimedTask : ITimedTask
     {
         _testCustomTimedTaskService = testCustomTimedTaskService;
     }
-    public Task Execute(TimedTaskDataMap timedTaskDataMap)
+
+    public async Task Execute(TimedTaskDataMap timedTaskDataMap)
     {
-        var t = _testCustomTimedTaskService.TestCustomTimedTask();
+        var t = await _testCustomTimedTaskService.TestCustomTimedTask();
         Console.WriteLine($"Hello, {timedTaskDataMap.Get<string>("Name")}  called TestCustomTimedTaskService.TestCustomTimedTask, result = {t}");
-        return Task.CompletedTask;
+        //return Task.CompletedTask;
     }
 }

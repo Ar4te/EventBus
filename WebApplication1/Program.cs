@@ -1,10 +1,11 @@
-
+using EventBus.EventLog.EFCore.Services;
+using EventBus.EventLog.EFCore.Utilities;
 using Microsoft.AspNetCore.Mvc;
+using TimedTask;
+using TimedTask.Base;
+using TimedTask.Extensions;
 using WebApplication1.Apis;
 using WebApplication1.Extensions;
-using EventBus.EventLog.EFCore.Utilities;
-using EventBus.EventLog.EFCore.Services;
-using MyTimedTask;
 using WebApplication1.TimedTasks;
 
 namespace WebApplication1;
@@ -75,24 +76,48 @@ public class Program
         .WithName("TestEvent")
         .WithOpenApi();
 
-        app.MapGet("/testTimedTask", (HttpContext httpContext, TimeTaskScheduler scheduler) =>
+        app.MapGet("/testTimedTask", (HttpContext httpContext, TimedTaskScheduler scheduler, IServiceProvider serviceProvider) =>
         {
-            for (int i = 0; i < 20000; i++)
-            {
-                scheduler.AddTask<CustomTimedTask>($"Task1.{i}", TimeSpan.FromSeconds(1), new TimedTaskDataMap());
-            }
-            //scheduler.AddTask<CustomTimedTask>("Task1.1", TimeSpan.FromSeconds(1), new TimedTaskDataMap());
-            //scheduler.AddTask<CustomTimedTask>("Task1.2", TimeSpan.FromSeconds(1), new TimedTaskDataMap());
-            //scheduler.AddTask<CustomTimedTask>("Task1.3", TimeSpan.FromSeconds(1), new TimedTaskDataMap());
-            //scheduler.AddTask<CustomTimedTask>("Task1.4", TimeSpan.FromSeconds(1), new TimedTaskDataMap());
-            //scheduler.AddTask<CustomTimedTask>("Task1.5", TimeSpan.FromSeconds(1), new TimedTaskDataMap());
-            //scheduler.AddTask<CustomTimedTask>("Task1.6", TimeSpan.FromSeconds(1), new TimedTaskDataMap());
-            //scheduler.AddTask<CustomTimedTask2>("Task2.0", TimeSpan.FromSeconds(1), new TimedTaskDataMap());
+            var ta = serviceProvider.GetRequiredService<CustomTimedTask2>();
+            var dataMap = new TimedTaskDataMap();
+            //scheduler.AddTask<CustomTimedTask>($"Task1.{i}", TimeSpan.FromSeconds(1), new TimedTaskDataMap());
 
+            for (int i = 0; i < 50; i++)
+            {
+                var t = TimedTaskDetail.Build()
+                .WithName($"Task1.{i}")
+                .WithInterval(TimeSpan.FromSeconds(1))
+                .WithRepeats(-1)
+                .For<CustomTimedTask2>(() => ta.Execute(dataMap))
+                .StartAt(10)
+                .UseTaskDataMap(new TimedTaskDataMap());
+                try
+                {
+                    scheduler.AddTask(t);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+            }
             scheduler.StartAll();
 
         })
         .WithName("TestTimedTask")
+        .WithOpenApi();
+
+        app.MapGet("/testTimedTaskPause", (HttpContext httpContext, [FromServices] TimedTaskScheduler timeTaskScheduler, string timedTaskGroupName) =>
+        {
+            return timeTaskScheduler.PauseTasks(timedTaskGroupName).IsSuccess;
+        })
+        .WithName("TestTimedTaskPause")
+        .WithOpenApi();
+
+        app.MapGet("/testTimedTaskResume", (HttpContext httpContext, [FromServices] TimedTaskScheduler timeTaskScheduler, string timedTaskGroupName) =>
+        {
+            return timeTaskScheduler.ResumeTasks(timedTaskGroupName).IsSuccess;
+        })
+        .WithName("TestTimedTaskResume")
         .WithOpenApi();
 
         app.Run();
