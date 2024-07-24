@@ -269,7 +269,7 @@ public static class DeepCopyByExpressionTrees
         var rightSide =
             Expression.Convert(
                 Expression.Call(
-                    DeepCopyByExpressionTreeObjMethod,
+                    _deepCopyByExpressionTreeObjMethod,
                     Expression.Convert(indexFrom, _objectType),
                     Expression.Constant(forceDeepCopy, typeof(bool)),
                     inputDictionary),
@@ -382,8 +382,8 @@ public static class DeepCopyByExpressionTrees
         return GetAllRelevantFields(type, forceAllFields: true);
     }
 
-    private static readonly Type FieldInfoType = typeof(FieldInfo);
-    private static readonly MethodInfo SetValueMethod = FieldInfoType.GetMethod("SetValue", new[] { _objectType, _objectType });
+    private static readonly Type _fieldInfoType = typeof(FieldInfo);
+    private static readonly MethodInfo _setValueMethod = _fieldInfoType.GetMethod("SetValue", new[] { _objectType, _objectType });
 
     private static void ReadonlyFieldToNullExpression(FieldInfo field, ParameterExpression boxingVariable, List<Expression> expressions)
     {
@@ -393,15 +393,15 @@ public static class DeepCopyByExpressionTrees
         var fieldToNullExpression =
                 Expression.Call(
                     Expression.Constant(field),
-                    SetValueMethod,
+                    _setValueMethod,
                     boxingVariable,
                     Expression.Constant(null, field.FieldType));
 
         expressions.Add(fieldToNullExpression);
     }
 
-    private static readonly Type ThisType = typeof(DeepCopyByExpressionTrees);
-    private static readonly MethodInfo DeepCopyByExpressionTreeObjMethod = ThisType.GetMethod("DeepCopyByExpressionTreeObj", BindingFlags.NonPublic | BindingFlags.Static);
+    private static readonly Type _thisType = typeof(DeepCopyByExpressionTrees);
+    private static readonly MethodInfo _deepCopyByExpressionTreeObjMethod = _thisType.GetMethod("DeepCopyByExpressionTreeObj", BindingFlags.NonPublic | BindingFlags.Static);
 
     private static void ReadonlyFieldCopyExpression(Type type, FieldInfo field, ParameterExpression inputParameter, ParameterExpression inputDictionary, ParameterExpression boxingVariable, List<Expression> expressions)
     {
@@ -411,8 +411,8 @@ public static class DeepCopyByExpressionTrees
         var fieldFrom = Expression.Field(Expression.Convert(inputParameter, type), field);
         var forceDeepCopy = field.FieldType != _objectType;
         var fieldDeepCopyExpression =
-            Expression.Call(Expression.Constant(field, FieldInfoType), SetValueMethod, boxingVariable,
-                Expression.Call(DeepCopyByExpressionTreeObjMethod, Expression.Convert(fieldFrom, _objectType), Expression.Constant(forceDeepCopy, typeof(bool)),
+            Expression.Call(Expression.Constant(field, _fieldInfoType), _setValueMethod, boxingVariable,
+                Expression.Call(_deepCopyByExpressionTreeObjMethod, Expression.Convert(fieldFrom, _objectType), Expression.Constant(forceDeepCopy, typeof(bool)),
                     inputDictionary));
         expressions.Add(fieldDeepCopyExpression);
     }
@@ -437,7 +437,7 @@ public static class DeepCopyByExpressionTrees
         var fieldTo = Expression.Field(outputVariable, field);
         var forceDeepCopy = field.FieldType != _objectType;
         var fieldDeepCopyExpression = Expression.Assign(fieldTo,
-            Expression.Convert(Expression.Call(DeepCopyByExpressionTreeObjMethod, Expression.Convert(fieldFrom, _objectType), Expression.Constant(forceDeepCopy, typeof(bool)), inputDictionary), fieldType));
+            Expression.Convert(Expression.Call(_deepCopyByExpressionTreeObjMethod, Expression.Convert(fieldFrom, _objectType), Expression.Constant(forceDeepCopy, typeof(bool)), inputDictionary), fieldType));
         expressions.Add(fieldDeepCopyExpression);
     }
 
