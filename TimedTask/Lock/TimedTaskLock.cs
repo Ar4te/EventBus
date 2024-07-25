@@ -4,7 +4,7 @@ public class TimedTaskLock : IDisposable
 {
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
-    private bool _disposed = false;
+    private bool _disposedValue;
 
     public Guid TimedTaskId { get; set; }
 
@@ -17,7 +17,7 @@ public class TimedTaskLock : IDisposable
 
     public async Task WaitAsync()
     {
-        if (_disposed)
+        if (_disposedValue)
         {
             throw new ObjectDisposedException(nameof(TimedTaskLock));
         }
@@ -29,27 +29,26 @@ public class TimedTaskLock : IDisposable
         _semaphore.Release();
     }
 
-    public void Dispose()
+    protected virtual void Dispose(bool disposing)
     {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    public virtual void Dispose(bool disposing)
-    {
-        if (!_disposed)
+        if (!_disposedValue)
         {
             if (disposing)
             {
                 _semaphore.Dispose();
             }
-
-            _disposed = true;
+            _disposedValue = true;
         }
     }
 
     ~TimedTaskLock()
     {
-        Dispose(false);
+        Dispose(disposing: false);
+    }
+
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }
